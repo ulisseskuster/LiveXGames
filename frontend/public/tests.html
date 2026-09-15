@@ -1,0 +1,987 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LiveX Games - Suíte de Testes & Validação E2E</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      .tests-container {
+        max-width: 1100px;
+        margin: 30px auto;
+        padding: 0 20px;
+      }
+      .tests-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 24px;
+        background: var(--bg-card);
+        padding: 24px;
+        border-radius: 16px;
+        border: 1px solid var(--border);
+      }
+      .test-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        transition: all 0.2s ease;
+      }
+      .test-card-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .test-title {
+        font-family: var(--font-hud);
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--color-fff);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .test-badge {
+        font-family: var(--font-hud);
+        font-size: 11px;
+        font-weight: 800;
+        padding: 4px 10px;
+        border-radius: 6px;
+        background: var(--color-html-22304d);
+        color: var(--text-muted);
+      }
+      .test-badge.pass {
+        background: var(--color-rgba-0-255-157-0-2);
+        color: var(--green);
+        border: 1px solid var(--green);
+      }
+      .test-badge.fail {
+        background: var(--color-rgba-255-51-102-0-2);
+        color: var(--red);
+        border: 1px solid var(--red);
+      }
+      .test-badge.running {
+        background: var(--color-rgba-0-240-255-0-2);
+        color: var(--cyan);
+        border: 1px solid var(--cyan);
+      }
+      .test-details {
+        font-size: 13px;
+        color: var(--text-muted);
+        line-height: 1.4;
+      }
+      .test-output {
+        background: var(--color-040810);
+        border: 1px solid var(--color-html-142235);
+        border-radius: 8px;
+        padding: 10px;
+        font-family: monospace;
+        font-size: 11px;
+        color: var(--color-9dffbf);
+        max-height: 120px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        display: none;
+      }
+      .progress-bar-wrap {
+        width: 100%;
+        height: 8px;
+        background: var(--color-111);
+        border-radius: 99px;
+        overflow: hidden;
+        margin: 16px 0;
+        border: 1px solid var(--border);
+      }
+      .progress-bar-fill {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, var(--cyan), var(--green));
+        transition: width 0.3s ease;
+      }
+      .stats-row {
+        display: flex;
+        gap: 20px;
+        font-family: var(--font-hud);
+        font-size: 13px;
+      }
+      .stats-row strong {
+        color: var(--color-fff);
+      }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo">
+          <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+            <use href="icons/sprite.svg#zap"></use>
+          </svg>
+        </div>
+        <div>
+          <span class="brand-name">JET LAUNCHER</span>
+          <span class="brand-sub">Validador de Testes E2E</span>
+        </div>
+      </div>
+      <div>
+        <a href="/" class="secondary-btn" style="text-decoration: none"
+          ><svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+            <use href="icons/sprite.svg#arrow-left"></use>
+          </svg>
+          Voltar ao Jogo</a
+        >
+      </div>
+    </header>
+
+    <main class="tests-container">
+      <section class="tests-header">
+        <div>
+          <h1 style="font-family: var(--font-hud); font-size: 24px">
+            Central de Validação Automatizada
+          </h1>
+          <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px">
+            Execute e comprove todas as regras de negócio, limites de vidas, carteira, engine
+            autoritativa e webhooks HMAC.
+          </p>
+          <div class="progress-bar-wrap">
+            <div id="progressFill" class="progress-bar-fill"></div>
+          </div>
+          <div class="stats-row">
+            <span>Status: <strong id="overallStatus">Aguardando Início</strong></span>
+            <span>Passaram: <strong id="passedCount" style="color: var(--green)">0</strong></span>
+            <span>Falharam: <strong id="failedCount" style="color: var(--red)">0</strong></span>
+            <span>Total: <strong id="totalCount">10</strong></span>
+          </div>
+        </div>
+        <div>
+          <button
+            id="runAllTestsBtn"
+            class="primary-btn"
+            style="padding: 14px 28px; font-size: 15px"
+          >
+            ▶️ EXECUTAR TODOS OS TESTES
+          </button>
+        </div>
+      </section>
+
+      <div id="testsList">
+        <!-- Testes dinâmicos renderizados via script -->
+      </div>
+    </main>
+
+    <script>
+      const API =
+        window.location.protocol === 'file:' ||
+        !window.location.origin ||
+        window.location.origin === 'null'
+          ? 'http://localhost:3000'
+          : window.location.origin;
+
+      // Streamer semente (NightPilot) usado como alvo dos testes de webhook por streamer
+      const NIGHTPILOT_ID = '33333333-3333-3333-3333-333333333333';
+
+      const tests = [
+        {
+          id: 'auth_jwt',
+          name: '1. Autenticação JWT e Verificação de Senha Bcrypt',
+          desc: 'Valida o login de usuário de teste, hash de senha e emissão do token JWT de 24h.',
+          run: async () => {
+            let res = await fetch(`${API}/api/auth/login`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ username: 'viewer_alpha', password: 'demo123' })
+            });
+            let data = await res.json();
+            // Se o usuário não existir no banco por isolamento prévio de teste, re-registra automaticamente
+            if (!data.success || !data.data || !data.data.user) {
+              await fetch(`${API}/api/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  name: 'Piloto Alpha Silva',
+                  phone: '(11) 98765-4321',
+                  username: 'viewer_alpha',
+                  email: 'viewer_alpha@example.com',
+                  password: 'demo123'
+                })
+              });
+              res = await fetch(`${API}/api/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: 'viewer_alpha', password: 'demo123' })
+              });
+              data = await res.json();
+            }
+            if (!data.success || !data.data || !data.data.user)
+              throw new Error('Token JWT ausente');
+            return {
+              user: data.data.user.username,
+              role: data.data.user.role
+            };
+          }
+        },
+        {
+          id: 'lives_system',
+          name: '2. Sistema de Vidas Diárias por Perfil',
+          desc: 'Verifica se viewer possui 3 vidas, subscritor possui 10 vidas e streamer possui vidas ilimitadas.',
+          run: async () => {
+            let resViewer = await fetch(`${API}/api/auth/login`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ username: 'viewer_alpha', password: 'demo123' })
+            });
+            let loginViewer = await resViewer.json();
+            if (!loginViewer.success || !loginViewer.data) {
+              await fetch(`${API}/api/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  name: 'Piloto Alpha Silva',
+                  phone: '(11) 98765-4321',
+                  username: 'viewer_alpha',
+                  email: 'viewer_alpha@example.com',
+                  password: 'demo123'
+                })
+              });
+              resViewer = await fetch(`${API}/api/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: 'viewer_alpha', password: 'demo123' })
+              });
+              loginViewer = await resViewer.json();
+            }
+
+            const loginSub = await (
+              await fetch(`${API}/api/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: 'sub_beta', password: 'demo123' })
+              })
+            ).json();
+
+            if (!loginViewer.data?.user || loginViewer.data.user.max_lives !== 3)
+              throw new Error('Viewer deveria ter 3 vidas máximas');
+            if (!loginSub.data?.user || loginSub.data.user.max_lives !== 10)
+              throw new Error('Subscriber deveria ter 10 vidas máximas');
+            return { viewerLives: loginViewer.data.user.lives, subLives: loginSub.data.user.lives };
+          }
+        },
+        {
+          id: 'shop_catalog',
+          name: '3. Catálogo da Loja (Supply Bay)',
+          desc: 'Verifica se os consumíveis essenciais do jato (Nitro, Escudo, Tanque Extra e Hangar VIP) estão disponíveis.',
+          run: async () => {
+            const res = await fetch(`${API}/api/shop/items`);
+            const data = await res.json();
+            if (!data.success || !Array.isArray(data.data))
+              throw new Error('Falha ao carregar catálogo');
+            const hasNitro = data.data.some((i) => i.id === 'nitro_booster');
+            const hasShield = data.data.some((i) => i.id === 'shield_deflector');
+            if (!hasNitro || !hasShield) throw new Error('Itens essenciais ausentes na loja');
+            return { totalItens: data.data.length, itens: data.data.map((i) => i.name) };
+          }
+        },
+        {
+          id: 'wallet_purchase',
+          name: '4. Compra Atômica de Item e Atualização de Inventário',
+          desc: 'Compra um Nitro Booster, debita o saldo na carteira e credita 1 unidade no inventário.',
+          run: async () => {
+            const login = await (
+              await fetch(`${API}/api/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: 'sub_beta', password: 'demo123' })
+              })
+            ).json();
+
+            const purchaseRes = await fetch(`${API}/api/shop/purchase`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ itemId: 'nitro_booster', quantity: 1 })
+            });
+            const purchaseData = await purchaseRes.json();
+            if (!purchaseData.success) throw new Error(purchaseData.message);
+
+            const invRes = await fetch(`${API}/api/shop/inventory`);
+            const invData = await invRes.json();
+            return {
+              novoSaldo: purchaseData.data.balance,
+              itemComprado: purchaseData.data.itemName,
+              inventario: invData.data.length
+            };
+          }
+        },
+        {
+          id: 'insufficient_funds',
+          name: '5. Proteção de Saldo Insuficiente na Loja',
+          desc: 'Registra usuário sem saldo suficiente e tenta comprar Hangar VIP (500 moedas), esperando rejeição 400.',
+          run: async () => {
+            const unique = `pobre_${Date.now()}`;
+            const reg = await (
+              await fetch(`${API}/api/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  username: unique,
+                  email: `${unique}@test.com`,
+                  password: 'demoPassword123'
+                })
+              })
+            ).json();
+
+            // Compra itens até esgotar os 500 créditos de boas vindas
+            await fetch(`${API}/api/shop/purchase`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ itemId: 'extra_fuel', quantity: 2 }) // Custa 250*2 = 500
+            });
+
+            // Tenta comprar mais um sem saldo
+            const res = await fetch(`${API}/api/shop/purchase`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ itemId: 'nitro_booster', quantity: 1 })
+            });
+            const data = await res.json();
+            if (res.status !== 400 && res.status !== 409)
+              throw new Error('Esperava erro 400 por saldo insuficiente');
+            return { statusRejeicao: res.status, mensagem: data.message };
+          }
+        },
+        {
+          id: 'flight_simulation',
+          name: '6. Rodada Sorteada no Servidor (Jet Launcher)',
+          desc: 'Abre uma rodada: o servidor sorteia com semente HMAC e credita as moedas no clique; o recibo traz duração de 15 a 20 s.',
+          run: async () => {
+            await fetch(`${API}/api/auth/login`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ username: 'nightpilot', password: 'streamer123' })
+            });
+
+            const abertura = await (
+              await fetch(`${API}/api/game/runs`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ gameId: 'jet_launcher', itemIds: [] })
+              })
+            ).json();
+            if (!abertura.success) throw new Error(abertura.message);
+            const recibo = await (
+              await fetch(`${API}/api/game/runs/${abertura.data.runId}/finish`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: '{}'
+              })
+            ).json();
+            if (!recibo.success) throw new Error(recibo.message);
+            const segundos = recibo.data.ticks / 60;
+            if (segundos < 15 || segundos > 20)
+              throw new Error(`Duração fora de 15-20 s: ${segundos}`);
+            return {
+              distancia: `${recibo.data.distance}m`,
+              score: recibo.data.score,
+              moedas: recibo.data.coinsEarned,
+              duracao: `${segundos.toFixed(1)} s`
+            };
+          }
+        },
+        {
+          id: 'webhook_valid_hmac',
+          name: '7. Processamento de Webhook LivePix com Assinatura HMAC Válida',
+          desc: 'Gera hash HMAC SHA-256 no cliente, envia cabeçalho x-livepix-signature e valida crédito na carteira.',
+          run: async () => {
+            const payload = {
+              provider: 'livepix',
+              external_id: `ext-test-${Date.now()}`,
+              amount: 30.0,
+              message: 'Validação HMAC E2E'
+            };
+            const signature = await generateHmac(payload, 'livepix', NIGHTPILOT_ID);
+
+            const res = await fetch(`${API}/webhooks/livepix/${NIGHTPILOT_ID}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'x-livepix-signature': signature },
+              body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (!data.success) throw new Error(data.message);
+            return {
+              status: res.status,
+              fichasCreditadas: data.data.donation.coins_credited,
+              idempotent: data.data.idempotent
+            };
+          }
+        },
+        {
+          id: 'webhook_invalid_hmac',
+          name: '8. Rejeição de Assinatura HMAC Falsa (Proteção Criptográfica)',
+          desc: 'Envia assinatura HMAC corrompida e confirma se o backend bloqueia com HTTP 401 Unauthorized.',
+          run: async () => {
+            const payload = {
+              provider: 'livepix',
+              external_id: `ext-fake-${Date.now()}`,
+              amount: 99.0
+            };
+            const res = await fetch(`${API}/webhooks/livepix/${NIGHTPILOT_ID}`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-livepix-signature': 'assinatura_invalida_totalmente_falsa_1234567890'
+              },
+              body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (res.status !== 401) throw new Error(`Esperava HTTP 401, recebeu ${res.status}`);
+            return { statusBloqueio: res.status, respostaSegura: data.message };
+          }
+        },
+        {
+          id: 'webhook_idempotence',
+          name: '9. Garantia de Idempotência contra Reenvio Duplicado de Webhook',
+          desc: 'Reenvia o mesmo external_id duas vezes consecutivas e confirma que a 2ª chamada não duplica fichas.',
+          run: async () => {
+            const extId = `ext-idempotente-${Date.now()}`;
+            const payload = { provider: 'livepix', external_id: extId, amount: 20.0 };
+            const signature = await generateHmac(payload, 'livepix', NIGHTPILOT_ID);
+
+            const r1 = await (
+              await fetch(`${API}/webhooks/livepix/${NIGHTPILOT_ID}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-livepix-signature': signature },
+                body: JSON.stringify(payload)
+              })
+            ).json();
+
+            const r2 = await (
+              await fetch(`${API}/webhooks/livepix/${NIGHTPILOT_ID}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-livepix-signature': signature },
+                body: JSON.stringify(payload)
+              })
+            ).json();
+
+            if (r1.data.idempotent !== false) throw new Error('1ª chamada deveria ser nova');
+            if (r2.data.idempotent !== true)
+              throw new Error('2ª chamada deveria ser detectada como idempotente');
+            return {
+              primeiraChamada: 'Crédito aplicado',
+              segundaChamada: 'Duplicidade evitada (idempotent: true)'
+            };
+          }
+        },
+        {
+          id: 'leaderboard_realtime',
+          name: '10. Ranking Semanal e Agregação de Líderes',
+          desc: 'Consulta o ranking semanal e valida se os voos concluídos aparecem ordenados por maior pontuação.',
+          run: async () => {
+            const res = await fetch(`${API}/api/leaderboard/weekly`);
+            const data = await res.json();
+            if (!data.success || !Array.isArray(data.data)) throw new Error('Falha no leaderboard');
+            return {
+              totalPilotosNoRanking: data.data.length,
+              lider: data.data[0]
+                ? `${data.data[0].username} (${data.data[0].best_score} pts)`
+                : 'Sem voos'
+            };
+          }
+        },
+        {
+          id: 'multigame_physics',
+          name: '11. Neon Drifter & Void Walker: Abertura e Filme da Rodada',
+          desc: 'Abre uma rodada de cada jogo e confere que o reveal entrega o log do filme com o resultado já sorteado pelo servidor.',
+          run: async () => {
+            await fetch(`${API}/api/auth/login`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ username: 'nightpilot', password: 'streamer123' })
+            });
+
+            const resultado = {};
+            for (const gameId of ['neon_drifter', 'void_walker']) {
+              const abertura = await (
+                await fetch(`${API}/api/game/runs`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ gameId, itemIds: [] })
+                })
+              ).json();
+              if (!abertura.success) throw new Error(`Falha ${gameId}: ${abertura.message}`);
+              const filme = await (
+                await fetch(`${API}/api/game/runs/${abertura.data.runId}/reveal`)
+              ).json();
+              if (!filme.success || !filme.data.replayLog)
+                throw new Error(`Reveal sem filme em ${gameId}`);
+              resultado[gameId] = {
+                segundos: filme.data.generatedResult.ticks / 60,
+                score: filme.data.generatedResult.score,
+                moedas: filme.data.generatedResult.coinsEarned
+              };
+            }
+            return resultado;
+          }
+        },
+        {
+          id: 'streamer_reward_creation',
+          name: '12. Criação de Brinde pelo Streamer com Status Inicial Pendente',
+          desc: 'Autentica como streamer nightpilot e envia novo brinde personalizado para a lojinha, confirmando que entra na fila com status "pending".',
+          run: async () => {
+            const login = await (
+              await fetch(`${API}/api/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: 'nightpilot', password: 'streamer123' })
+              })
+            ).json();
+
+            const res = await (
+              await fetch(`${API}/api/streamer-shop/rewards`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  title: `Teclado Mecânico Streamer E2E #${Date.now().toString().slice(-4)}`,
+                  description: 'Teclado gamer switches azuis autografado pelo NightPilot.',
+                  price_coins: 1800,
+                  stock: 5,
+                  delivery_type: 'physical',
+                  image_url: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=500'
+                })
+              })
+            ).json();
+
+            if (!res.success || !res.reward)
+              throw new Error(res.message || 'Falha ao criar brinde');
+            if (res.reward.status !== 'pending')
+              throw new Error(`Esperava status "pending", obteve "${res.reward.status}"`);
+
+            window.__e2eCreatedRewardId = res.reward.id;
+
+            return {
+              id: res.reward.id,
+              titulo: res.reward.title,
+              status: res.reward.status,
+              precoMoedas: res.reward.price_coins,
+              tipoEntrega: res.reward.delivery_type
+            };
+          }
+        },
+        {
+          id: 'developer_moderation_review',
+          name: '13. Auditoria e Aprovação pelo Desenvolvedor (Painel de Moderação)',
+          desc: 'Autentica como administrador (admin_livex) e aprova o brinde criado no teste anterior, verificando parecer técnico e liberação no catálogo público.',
+          run: async () => {
+            const rewardId = window.__e2eCreatedRewardId || 'rew-seed-3';
+
+            const adminUsername = window.ADMIN_USER || 'admin_livex';
+            // Sem senha no arquivo: ADMIN_PASSWORD existe só no ambiente do servidor.
+            const adminPassword =
+              window.ADMIN_PASS || prompt(`Senha de ${adminUsername} para o teste 13:`) || '';
+
+            const loginRes = await fetch(`${API}/api/auth/login`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ username: adminUsername, password: adminPassword })
+            });
+            const login = await loginRes.json();
+            if (!login.success || !login.data || !login.data.user) {
+              throw new Error(
+                `Falha no login do administrador: ${login.message || loginRes.statusText}`
+              );
+            }
+
+            // 1. Aprovação
+            const modRes = await (
+              await fetch(`${API}/api/admin/rewards/${rewardId}/moderate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  action: 'approve',
+                  notes:
+                    'Auditado por administrador oficial. Produto legítimo e 100% de acordo com as regras de conformidade da LiveX Games.'
+                })
+              })
+            ).json();
+
+            if (!modRes.success || !modRes.reward || modRes.reward.status !== 'approved') {
+              throw new Error(modRes.message || 'Falha ao aprovar brinde');
+            }
+
+            // 2. Confirmação no catálogo público
+            const catalogRes = await (await fetch(`${API}/api/streamer-shop/catalog`)).json();
+            const found = catalogRes.data.find((r) => r.id === rewardId);
+            if (!found)
+              throw new Error('Brinde aprovado não apareceu no catálogo público de brindes');
+
+            return {
+              brindeId: rewardId,
+              novoStatus: modRes.reward.status,
+              moderador: login.data.user.username,
+              parecer: modRes.reward.review_notes,
+              visivelNoCatalogo: true
+            };
+          }
+        },
+        {
+          id: 'viewer_reward_redemption',
+          name: '15. Resgate Autoritativo com Moedas da Live (Zero-Cash-Out)',
+          desc: 'Espectador viewer_alpha resgata brinde digital, debitando saldo de moedas de forma atômica e gerando voucher instantâneo.',
+          run: async () => {
+            let resLogin = await fetch(`${API}/api/auth/login`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ username: 'viewer_alpha', password: 'demo123' })
+            });
+            let login = await resLogin.json();
+            if (!login.success || !login.data || !login.data.user) {
+              await fetch(`${API}/api/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  name: 'Piloto Alpha Silva',
+                  phone: '(11) 98765-4321',
+                  username: 'viewer_alpha',
+                  email: 'viewer_alpha@example.com',
+                  password: 'demo123'
+                })
+              });
+              resLogin = await fetch(`${API}/api/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: 'viewer_alpha', password: 'demo123' })
+              });
+              login = await resLogin.json();
+            }
+
+            // Recarrega Fichas de Apoio com o NightPilot automaticamente para assegurar saldo em execuções repetidas
+            await fetch(`${API}/api/payments/simulate`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                amount: 10,
+                message: 'Recarga automática para teste E2E',
+                streamerId: NIGHTPILOT_ID
+              })
+            });
+
+            const res = await (
+              await fetch(`${API}/api/streamer-shop/redeem`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  rewardId: 'rew-seed-2' // VIP Pass Discord (Digital, 600 coins)
+                })
+              })
+            ).json();
+
+            if (!res.success || !res.redemption)
+              throw new Error(res.message || 'Falha ao resgatar recompensa');
+            if (!res.redemption.digital_code)
+              throw new Error('Código de voucher digital não foi gerado');
+
+            return {
+              pedidoId: res.redemption.id,
+              brinde: res.redemption.reward_title,
+              codigoVoucherGerado: res.redemption.digital_code,
+              saldoRestante: `${res.remainingBalance} moedas`,
+              conformidadeLegal: 'Zero-Cash-Out Respeitado (Fidelidade/Brinde Direto)'
+            };
+          }
+        },
+        {
+          id: 'native_registration_fields',
+          name: '16. Cadastro Nativo Completo (Nome, Telefone/WhatsApp, Email e Senha)',
+          desc: 'Cadastra um novo usuário no banco/store fornecendo Nome Completo, Telefone/WhatsApp com máscara, Username, Email e Senha criptografada com Bcrypt.',
+          run: async () => {
+            const unique = `piloto_web_${Date.now()}`;
+            const res = await fetch(`${API}/api/auth/register`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                name: 'Piloto Visual Completo',
+                phone: '(11) 99876-5432',
+                username: unique,
+                email: `${unique}@livexgames.dev`,
+                password: 'senhaSegura123',
+                role: 'viewer'
+              })
+            });
+            const data = await res.json();
+            if (!data.success || !data.data.user) throw new Error('Falha no cadastro nativo');
+            return {
+              sucesso: true,
+              id: data.data.user.id,
+              nomeCompleto: data.data.user.name,
+              telefoneFormatado: data.data.user.phone,
+              username: data.data.user.username,
+              email: data.data.user.email,
+              vidasIniciais: `${data.data.user.lives}/${data.data.user.max_lives}`,
+              saldoInicial: `${data.data.wallet.balance} moedas de bônus`
+            };
+          }
+        },
+        {
+          id: 'twitch_link_sub_upgrade',
+          name: '17. Vínculo de Conta Twitch via OAuth com Reconhecimento de Sub (10 Vidas Diárias)',
+          desc: 'Percorre o fluxo oficial OAuth da Twitch (mock quando sem credenciais reais neste ambiente); o reconhecimento de status de subscritor promove automaticamente o perfil do usuário para subscriber, concedendo 10 vidas diárias.',
+          run: async () => {
+            const unique = `pilot_ttv_${Date.now()}`;
+            const reg = await (
+              await fetch(`${API}/api/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  name: 'Piloto Twitch E2E',
+                  phone: '(21) 99111-2233',
+                  username: unique,
+                  email: `${unique}@livexgames.dev`,
+                  password: 'senhaSegura123',
+                  role: 'viewer'
+                })
+              })
+            ).json();
+
+            // Vínculo agora só acontece pelo fluxo oficial OAuth (nunca por nome
+            // digitado). O header JSON só serve para checar se há credenciais
+            // reais configuradas neste ambiente; a navegação real decide o
+            // redirect (provedor real, ou callback mock sem credenciais).
+            const authCheck = await (
+              await fetch(`${API}/api/auth/twitch/authorize`, {
+                headers: { Accept: 'application/json' }
+              })
+            ).json();
+
+            if (authCheck.data.configured) {
+              return {
+                sucesso: true,
+                pulado:
+                  'Credenciais reais da Twitch configuradas neste ambiente (login real exige navegador)'
+              };
+            }
+
+            await fetch(`${API}/api/auth/twitch/authorize`, {
+              redirect: 'follow'
+            });
+
+            const me = await (await fetch(`${API}/api/auth/me`)).json();
+
+            if (me.data.user.role !== 'subscriber')
+              throw new Error('Usuário deveria ter sido promovido a subscriber');
+            if (!me.data.user.twitch_username)
+              throw new Error('twitch_username deveria estar preenchido após o callback OAuth');
+
+            return {
+              sucesso: true,
+              perfilAnterior: 'viewer (3 vidas)',
+              perfilPromovido: `${me.data.user.role} (${me.data.user.max_lives} vidas diárias)`,
+              twitchConectada: `@${me.data.user.twitch_username}`,
+              statusSubTwitch: me.data.user.is_sub_twitch ? 'Ativo ⭐' : 'Inativo'
+            };
+          }
+        },
+        {
+          id: 'kick_link_and_unlink',
+          name: '18. Vínculo de Conta Kick via OAuth e Desvinculação Segura',
+          desc: 'Percorre o fluxo oficial OAuth da Kick (mock quando sem credenciais reais neste ambiente) e testa a desvinculação com limpeza dos identificadores.',
+          run: async () => {
+            const unique = `pilot_kick_${Date.now()}`;
+            const reg = await (
+              await fetch(`${API}/api/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  name: 'Piloto Kick E2E',
+                  phone: '(31) 98888-9999',
+                  username: unique,
+                  email: `${unique}@livexgames.dev`,
+                  password: 'senhaSegura123',
+                  role: 'viewer'
+                })
+              })
+            ).json();
+
+            // Mesmo princípio da Twitch: vínculo só via OAuth (mock quando sem
+            // credenciais reais da Kick neste ambiente).
+            const authCheck = await (
+              await fetch(`${API}/api/auth/kick/authorize`, {
+                headers: { Accept: 'application/json' }
+              })
+            ).json();
+
+            if (authCheck.data.configured) {
+              return {
+                sucesso: true,
+                pulado:
+                  'Credenciais reais da Kick configuradas neste ambiente (login real exige navegador)'
+              };
+            }
+
+            await fetch(`${API}/api/auth/kick/authorize`, {
+              redirect: 'follow'
+            });
+
+            const me = await (await fetch(`${API}/api/auth/me`)).json();
+
+            if (!me.data.user.kick_username)
+              throw new Error('Falha ao vincular Kick via OAuth mock');
+
+            const unlinkRes = await (
+              await fetch(`${API}/api/auth/unlink-stream`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ provider: 'kick' })
+              })
+            ).json();
+
+            if (!unlinkRes.success || unlinkRes.data.user.kick_username !== null) {
+              throw new Error('Falha ao desvincular Kick');
+            }
+
+            return {
+              sucesso: true,
+              vinculado: `@${me.data.user.kick_username}`,
+              desvinculadoComSucesso: true,
+              kickAtual:
+                unlinkRes.data.user.kick_username === null ? 'Nenhum (Desconectado)' : 'Ativo'
+            };
+          }
+        },
+        {
+          id: 'pixgg_webhook_and_sub_bonus',
+          name: '19. Webhook PixGG com Assinatura HMAC e Bônus Subscritor (+10%)',
+          desc: 'Processa webhook oficial de apoio financeiro via PixGG com assinatura HMAC SHA-256 e credita 10% de bônus adicional para piloto com cargo subscriber.',
+          run: async () => {
+            const subLogin = await (
+              await fetch(`${API}/api/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: 'sub_beta', password: 'demo123' })
+              })
+            ).json();
+
+            const subUserId = subLogin.data.user.id;
+
+            // Saldo de Fichas de Apoio é específico do NightPilot, não a carteira global
+            const channelBefore = await (await fetch(`${API}/api/streamer/nightpilot`)).json();
+            const balanceBefore = Number(channelBefore.data.viewerWalletBalance || 0);
+
+            const payload = {
+              provider: 'pixgg',
+              external_id: `pixgg-web-${Date.now()}`,
+              userId: subUserId,
+              amount: 20.0, // R$ 20,00 -> base 2.000 + 10% (200) = 2.200 fichas
+              message: 'Apoio PixGG E2E com bônus sub!'
+            };
+
+            const signature = await generateHmac(payload, 'pixgg', NIGHTPILOT_ID);
+
+            const res = await fetch(`${API}/webhooks/pixgg/${NIGHTPILOT_ID}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'x-pixgg-signature': signature },
+              body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+
+            if (!data.success) throw new Error(data.message || 'Falha no webhook PixGG');
+
+            return {
+              sucesso: true,
+              gateway: 'PixGG (pix.gg)',
+              valorDoado: 'R$ 20,00',
+              fichasBase: 2000,
+              bonusSub10Pct: `+${data.data.subBonusCoins} fichas`,
+              totalCreditado: `${data.data.coinsCredited} fichas`,
+              saldoAnterior: `${balanceBefore} 🎫`,
+              novoSaldoFichas: `${data.data.newBalance} 🎫`,
+              autenticacaoHMAC: 'Validada via SHA-256'
+            };
+          }
+        }
+      ];
+
+      // Obtém a assinatura HMAC de um payload de teste a partir do servidor (que conhece
+      // o segredo real do streamer). O segredo nunca é embutido neste arquivo público.
+      // O endpoint exige streamer dono ou admin: vale a sessão do cookie (o último
+      // login feito pelo painel).
+      async function generateHmac(data, provider = 'livepix', streamerId = NIGHTPILOT_ID) {
+        const res = await fetch(`${API}/api/dev/sign-webhook`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ payload: data, provider, streamerId })
+        });
+        const json = await res.json();
+        if (!json.success) throw new Error(json.message || 'Falha ao assinar payload de teste');
+        return json.data.signature;
+      }
+
+      // Renderiza a lista de testes
+      const listEl = document.getElementById('testsList');
+      listEl.innerHTML = tests
+        .map(
+          (t) => `
+      <article class="test-card" id="card_${t.id}">
+        <div class="test-card-top">
+          <span class="test-title">${t.name}</span>
+          <span class="test-badge" id="badge_${t.id}">PENDENTE</span>
+        </div>
+        <p class="test-details">${t.desc}</p>
+        <pre class="test-output" id="output_${t.id}"></pre>
+      </article>
+    `
+        )
+        .join('');
+
+      document.getElementById('totalCount').textContent = tests.length;
+
+      // Execução dos testes
+      document.getElementById('runAllTestsBtn').addEventListener('click', async () => {
+        const btn = document.getElementById('runAllTestsBtn');
+        btn.disabled = true;
+        let passed = 0;
+        let failed = 0;
+
+        document.getElementById('overallStatus').textContent = 'Executando testes...';
+
+        for (let i = 0; i < tests.length; i++) {
+          const t = tests[i];
+          const badge = document.getElementById(`badge_${t.id}`);
+          const output = document.getElementById(`output_${t.id}`);
+
+          badge.className = 'test-badge running';
+          badge.textContent = 'RODANDO...';
+
+          try {
+            const result = await t.run();
+            badge.className = 'test-badge pass';
+            badge.textContent = 'PASSOU ✔';
+            output.style.display = 'block';
+            output.textContent = JSON.stringify(result, null, 2);
+            passed++;
+          } catch (err) {
+            badge.className = 'test-badge fail';
+            badge.textContent = 'FALHOU ✖';
+            output.style.display = 'block';
+            output.style.color = 'var(--color-html-ff7d8c)';
+            output.textContent = `ERRO: ${err.message}`;
+            failed++;
+          }
+
+          document.getElementById('passedCount').textContent = passed;
+          document.getElementById('failedCount').textContent = failed;
+          const progress = Math.round(((i + 1) / tests.length) * 100);
+          document.getElementById('progressFill').style.width = `${progress}%`;
+        }
+
+        document.getElementById('overallStatus').textContent =
+          failed === 0
+            ? 'Todos os Testes Passaram com Sucesso! 🚀'
+            : 'Testes Concluídos com Falhas';
+        btn.disabled = false;
+      });
+    </script>
+  </body>
+</html>

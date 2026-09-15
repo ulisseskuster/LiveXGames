@@ -1,0 +1,7 @@
+# Versão fixa: a simulação é a regra do jogo, e compilador diferente pode gerar
+# código de ponto flutuante diferente. Suba de propósito, junto com SIM_VERSION.
+[toolchain]
+channel = "1.98.1"
+targets = ["wasm32-unknown-unknown"]
+profile = "minimal"
+components = ["rustfmt"]

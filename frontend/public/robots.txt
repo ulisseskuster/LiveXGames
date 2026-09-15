@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /webhooks/
+Disallow: /health
+Disallow: /status
+Disallow: /tests.html
+Disallow: /docs
+Disallow: /api-docs
+Disallow: /openapi.json
+
+Sitemap: https://livexgames.onrender.com/sitemap.xml

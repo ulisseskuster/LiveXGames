@@ -1,0 +1,25 @@
+node_modules
+*/node_modules
+.git
+.gitignore
+*.log
+.env
+*/.env
+test
+backend/test
+tmp
+
+# Artefatos de auditoria/QA e binarios: nao pertencem a imagem de producao
+# (o .exe do scanner sozinho tem 71MB)
+*.exe
+strix_runs
+pixeljury
+test-results
+playwright-report
+lighthouse-report.json
+lighthouse-report.html
+frontend/public/tests.html
+.memoire
+scratch
+e2e
+artifacts

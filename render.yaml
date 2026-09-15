@@ -1,0 +1,61 @@
+services:
+  - type: web
+    name: livex-games
+    runtime: node
+    plan: free
+    region: ohio
+    # npm ci instala exatamente o package-lock.json; npm install podia subir dependência transitiva a cada deploy.
+    buildCommand: cd backend && npm ci
+    startCommand: cd backend && npm start
+    # /health responde 503 sem banco: deploy quebrado não substitui o que está no ar.
+    healthCheckPath: /health
+    # Só publica quando o CI do commit passa: antes, commit com CI vermelho ia ao ar.
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false # Cole a Connection String do Supabase ou Neon (ex: postgresql://postgres:senha@db.xxx.supabase.co:5432/postgres)
+      - key: LIVEPIX_WEBHOOK_SECRET
+        generateValue: true # Copie o valor gerado pelo Render e configure-o no painel de webhooks do LivePix
+      - key: PIXGG_WEBHOOK_SECRET
+        generateValue: true # Copie o valor gerado pelo Render e configure-o no painel de webhooks do PixGG
+      - key: CLOUDINARY_URL
+        sync: false # Opcional: cloudinary://API_KEY:API_SECRET@CLOUD_NAME para fotos dos brindes na nuvem
+      - key: TWITCH_CLIENT_ID
+        value: kd1unb4gahabc4rr63680b7axtcf6u
+      - key: TWITCH_CLIENT_SECRET
+        sync: false # Cole a Secret gerada no console da Twitch (https://dev.twitch.tv/console)
+      - key: TWITCH_REDIRECT_URI
+        value: https://livexgames.onrender.com/api/auth/twitch/callback
+      - key: TWITCH_AUTH_ENDPOINT
+        value: https://id.twitch.tv/oauth2/authorize
+      - key: KICK_CLIENT_ID
+        sync: false # Cole o Client ID gerado em kick.com > Configurações > Developer
+      - key: KICK_CLIENT_SECRET
+        sync: false # Cole o Client Secret gerado junto do Client ID acima
+      - key: KICK_REDIRECT_URI
+        value: https://livexgames.onrender.com/api/auth/kick/callback
+      - key: ADMIN_USERNAMES
+        value: ukc___ # Usernames (separados por vírgula) promovidos a admin automaticamente no próximo login
+      - key: ADMIN_PASSWORD
+        generateValue: true # Senha da conta admin_livex. Sem esta variável a conta não é criada (não há mais senha padrão no código). Copie o valor gerado no painel do Render.
+      # Recuperação de senha e confirmação de cadastro. Vazio = nada é enviado
+      # (o link só aparece no log). Valores por provedor em backend/.env.example.
+      # Brevo (300/dia grátis, sem cartão): smtp-relay.brevo.com
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: MAIL_FROM
+        sync: false # Ex.: LiveX Games <nao-responda@seudominio.com>
+      - key: PUBLIC_BASE_URL
+        value: https://livexgames.onrender.com # Base das URLs de webhook mostradas na Central do Criador; sem ela o valor sai do cabeçalho Host, que é forjável

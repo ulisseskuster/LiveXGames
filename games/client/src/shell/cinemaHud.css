@@ -1,0 +1,231 @@
+.cinema-hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  color: #f0f5f8;
+  font-family: var(--font-hud, 'Orbitron', system-ui);
+  background: linear-gradient(180deg, #040a14c4, transparent 28%, transparent 66%, #040a14e6);
+  text-shadow: 0 2px 8px #0008;
+  --cinema-accent: #f2a5c6;
+}
+.cinema-hud--void {
+  --cinema-accent: #a7cdd5;
+}
+.cinema-hud [hidden] {
+  display: none !important;
+}
+.cinema-heading {
+  position: absolute;
+  top: 25px;
+  left: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.cinema-kicker {
+  font: 600 9px system-ui;
+  letter-spacing: 0.25em;
+  color: #b7c6d0;
+}
+.cinema-heading > strong {
+  font-size: clamp(14px, 2vw, 23px);
+  letter-spacing: 0.08em;
+  font-weight: 700;
+}
+.cinema-phase {
+  font: 500 10px system-ui;
+  letter-spacing: 0.19em;
+  color: var(--cinema-accent);
+}
+.cinema-score {
+  position: absolute;
+  right: 28px;
+  top: 25px;
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+  gap: 6px;
+}
+.cinema-score small {
+  font: 600 9px system-ui;
+  letter-spacing: 0.2em;
+  color: #b7c6d0;
+}
+.cinema-score strong {
+  font-size: clamp(21px, 3.3vw, 38px);
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.cinema-bonus {
+  font: 600 9px system-ui;
+  letter-spacing: 0.1em;
+  color: var(--cinema-accent);
+}
+.cinema-bottom {
+  position: absolute;
+  bottom: 44px;
+  left: 28px;
+  right: 28px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.cinema-readout {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+.cinema-speed {
+  font-size: clamp(26px, 4vw, 42px);
+  font-style: italic;
+  font-weight: 500;
+}
+.cinema-readout > span {
+  font: 500 9px system-ui;
+  letter-spacing: 0.1em;
+  color: #b7c6d0;
+}
+.cinema-distance {
+  padding-left: 20px;
+  border-left: 1px solid #ffffff3b;
+  font: 500 10px system-ui;
+  letter-spacing: 0.15em;
+}
+.cinema-skip {
+  margin-left: auto;
+  pointer-events: auto;
+  border: 1px solid #ffffff4a !important;
+  border-radius: 7px !important;
+  padding: 10px 14px !important;
+  background: #09142199 !important;
+  color: #eaf4fb !important;
+  font: 500 11px system-ui !important;
+  min-height: 44px;
+}
+.cinema-skip span {
+  margin-left: 14px;
+  color: var(--cinema-accent);
+}
+.cinema-skip:hover {
+  background: #203345 !important;
+}
+.cinema-timeline {
+  position: absolute;
+  left: 28px;
+  right: 28px;
+  bottom: 31px;
+  height: 2px;
+  background: #ffffff26;
+}
+.cinema-timeline i {
+  display: block;
+  height: 100%;
+  background: var(--cinema-accent);
+  transform-origin: left;
+  transform: scaleX(0);
+}
+.cinema-state {
+  position: absolute;
+  left: 28px;
+  bottom: 14px;
+  font: 500 8px system-ui;
+  letter-spacing: 0.16em;
+  color: #a6b7c4;
+}
+.cinema-palco {
+  aspect-ratio: 16/9;
+  min-height: 300px;
+  overflow: hidden;
+  border: 1px solid #35434d;
+  border-radius: 10px;
+  background: #040810;
+  position: relative;
+}
+.cinema-palco canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+}
+.cinema-palco:focus-within {
+  border-color: #7792a4;
+}
+@media (max-width: 600px) {
+  .cinema-palco {
+    aspect-ratio: 4/3;
+    min-height: 270px;
+  }
+  .cinema-heading {
+    max-width: 65%;
+    top: 18px;
+    left: 16px;
+    gap: 7px;
+  }
+  .cinema-heading > strong {
+    font-size: 13px;
+    letter-spacing: 0.03em;
+  }
+  .cinema-kicker {
+    font-size: 7px;
+    letter-spacing: 0.13em;
+  }
+  .cinema-phase {
+    font-size: 8px;
+    letter-spacing: 0.1em;
+  }
+  .cinema-score {
+    right: 16px;
+    top: 18px;
+  }
+  .cinema-score strong {
+    font-size: 24px;
+  }
+  .cinema-bonus {
+    font-size: 7px;
+  }
+  .cinema-bottom {
+    left: 16px;
+    right: 16px;
+    gap: 10px;
+    bottom: 94px;
+    flex-wrap: wrap;
+  }
+  .cinema-distance {
+    font-size: 8px;
+    padding-left: 10px;
+    max-width: 80px;
+  }
+  .cinema-timeline {
+    left: 16px;
+    right: 16px;
+    bottom: 28px;
+  }
+  .cinema-state {
+    left: 16px;
+    bottom: 12px;
+    font-size: 7px;
+    letter-spacing: 0.08em;
+  }
+  .cinema-skip {
+    position: absolute;
+    right: 0;
+    bottom: -48px;
+    padding: 8px !important;
+    font-size: 10px !important;
+  }
+  .cinema-skip span {
+    margin-left: 3px;
+  }
+}
+
+.cinema-hud[data-estado='pronto'] .cinema-bottom,
+.cinema-hud[data-estado='pronto'] .cinema-score,
+.cinema-hud[data-estado='pronto'] .cinema-state {
+  display: none;
+}
+.cinema-skip:focus-visible {
+  outline: 2px solid var(--cinema-accent);
+  outline-offset: 3px;
+}

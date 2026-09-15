@@ -1,0 +1,9 @@
+node_modules
+package-lock.json
+frontend/public/openapi.json
+database/schema.sql
+database/seed.sql
+database/migrations
+frontend/public/games
+games/sim/target
+games/build-manifest.json

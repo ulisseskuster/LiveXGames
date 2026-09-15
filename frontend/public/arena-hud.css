@@ -1,0 +1,816 @@
+/* Loja integrada ao cockpit dos três jogos. */
+.game-bay {
+  --game-accent: #e6c69a;
+}
+
+.game-bay[data-game='neon_drifter'] {
+  --game-accent: #eda2c2;
+}
+.game-bay[data-game='void_walker'] {
+  --game-accent: #acc4e0;
+}
+.game-bay .game-viewport {
+  height: auto;
+  aspect-ratio: 16 / 10;
+  min-height: 480px;
+  border: 1px solid #39495e;
+  border-radius: 20px;
+  box-shadow: 0 24px 64px #0005;
+  scroll-margin-top: 180px;
+}
+.game-bay #jogoNovoContainer {
+  bottom: 76px;
+}
+.game-bay .game-viewport .pilot-comms-widget {
+  display: none;
+}
+.game-bay .game-hub-nav {
+  padding: 6px;
+  background: #0a1120;
+  border: 1px solid #263348;
+  border-radius: 14px;
+  gap: 6px;
+}
+.game-bay .game-tab {
+  border-radius: 10px;
+  min-height: 68px;
+}
+.game-bay .game-tab.active {
+  color: var(--game-accent);
+  background: #172538;
+  border-color: var(--game-accent);
+  box-shadow: none;
+}
+.arena-hud-dock {
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 35;
+  color: #ecf4ff;
+  font-family: 'Rajdhani', system-ui, sans-serif;
+}
+.hud-dock-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 76px;
+  padding: 12px 18px;
+  background: linear-gradient(110deg, #172334, #0a121f);
+  border-top: 1px solid #34445a;
+}
+.hud-shop-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #18263a;
+  border: 1px solid #3c526b;
+  padding: 0 14px;
+  min-height: 48px;
+  color: #edf7ff;
+  border-radius: 9px;
+  font:
+    600 16px 'Rajdhani',
+    system-ui;
+  cursor: pointer;
+}
+.hud-shop-toggle b {
+  font-size: 14px;
+  color: var(--game-accent);
+  border-left: 1px solid #4a5870;
+  padding-left: 10px;
+}
+.hud-shop-toggle[aria-expanded='true'] {
+  border-color: var(--game-accent);
+  background: #21324a;
+}
+.hud-loadout-slots {
+  display: flex;
+  gap: 6px;
+}
+.hud-slot {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px dashed #52617a;
+  border-radius: 8px;
+  color: #8e9bb0;
+}
+.hud-slot.is-equipped {
+  color: var(--game-accent);
+  border-style: solid;
+  border-color: var(--game-accent);
+  background: #23354a;
+}
+.hud-sub-bonus {
+  color: #ffda84;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+.arena-hud-dock [hidden] {
+  display: none !important;
+}
+.arena-hud-dock .launch-btn {
+  margin-left: auto;
+  width: auto;
+  min-width: 155px;
+  min-height: 48px;
+  padding: 10px 20px;
+  border-radius: 9px;
+  background: var(--game-accent);
+  color: #07121e;
+  box-shadow: none;
+  border: 0;
+  font-size: 15px;
+  gap: 10px;
+}
+.arena-hud-dock .launch-btn .icon {
+  color: inherit;
+}
+.hud-shop-panel {
+  margin: 0 14px 12px;
+  padding: 20px;
+  border: 1px solid #4a5c75;
+  border-radius: 14px;
+  background: #0c1629f5;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 -12px 60px #0008;
+  max-height: min(380px, 70vh);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.hud-shop-heading {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+  flex-shrink: 0;
+}
+.hud-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  font-weight: 700;
+  color: var(--game-accent);
+}
+.hud-shop-heading h2 {
+  font:
+    600 22px 'Rajdhani',
+    system-ui;
+  margin: 3px 0 0;
+  color: #f2f6ff;
+}
+.hud-shop-balance {
+  margin-left: auto;
+  font-size: 15px;
+  color: #ffe1a0;
+  white-space: nowrap;
+}
+.hud-close {
+  flex-shrink: 0;
+  min-width: 44px;
+  height: 44px;
+  border: 1px solid #40516a;
+  background: #1a2940;
+  color: #e5efff;
+  border-radius: 8px;
+  font-size: 26px;
+  cursor: pointer;
+}
+.hud-shop-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  overflow-y: auto;
+  min-height: 0;
+  padding: 2px;
+  scrollbar-width: thin;
+}
+.hud-item {
+  padding: 14px;
+  border: 1px solid #35445c;
+  border-radius: 11px;
+  background: linear-gradient(155deg, #203043, #101a29 65%);
+  min-width: 0;
+}
+.hud-item.is-equipped {
+  border-color: var(--game-accent);
+}
+.hud-item-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+.hud-item-icon {
+  display: grid;
+  place-items: center;
+  width: 104px;
+  height: 78px;
+  color: var(--game-accent);
+}
+.hud-item-icon img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.hud-item-stock {
+  color: #c2cfe0;
+  font-size: 13px;
+}
+.hud-item-category {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: #a5b7cd;
+}
+.hud-item h3 {
+  font:
+    600 18px 'Rajdhani',
+    system-ui;
+  line-height: 1.2;
+  margin: 5px 0 10px;
+  min-height: 44px;
+  color: #f4f8ff;
+}
+.hud-item-description {
+  font: 400 12px/1.45 system-ui;
+  color: #c2cfe0;
+  margin: 0 0 12px;
+}
+.hud-item-bonus {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--game-accent);
+  margin: 0 0 15px;
+}
+.hud-item-bonus span {
+  display: block;
+  font-size: 13px;
+  color: #c2cfe0;
+  font-weight: 400;
+  margin-top: 3px;
+}
+.hud-item-actions {
+  display: flex;
+  gap: 8px;
+}
+.hud-equip,
+.hud-buy {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid #4c617d;
+  border-radius: 8px;
+  min-height: 44px;
+  padding: 6px 8px;
+  color: #ecf4ff;
+  background: #1a2a40;
+  cursor: pointer;
+  font:
+    600 14px 'Rajdhani',
+    system-ui;
+  flex: 1;
+}
+.hud-equip:has(input:disabled) {
+  color: #aab9cb;
+  cursor: default;
+}
+.hud-equip input {
+  accent-color: var(--game-accent);
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+.hud-buy {
+  background: #dbeafa;
+  color: #0a1b2e;
+  border-color: #dbeafa;
+}
+.hud-shop-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  color: #b4c4d7;
+  margin-top: 16px;
+  flex-shrink: 0;
+}
+.hud-shop-footer strong {
+  color: var(--game-accent);
+  font-weight: 600;
+}
+.arena-hud-dock button:focus-visible,
+.hud-equip:focus-within {
+  outline: 2px solid var(--game-accent);
+  outline-offset: 3px;
+}
+.arena-hud-dock button:hover:not(:disabled) {
+  filter: brightness(1.12);
+}
+.arena-hud-dock button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.game-viewport.is-playing .hud-loadout-slots {
+  opacity: 0.5;
+}
+@media (max-width: 750px) {
+  .hud-loadout-slots {
+    display: none;
+  }
+  .hud-dock-bar {
+    gap: 8px;
+    padding: 10px;
+  }
+  .hud-sub-bonus {
+    font-size: 10px;
+    max-width: 66px;
+  }
+  .hud-item-actions {
+    flex-wrap: wrap;
+  }
+  .hud-item-actions > * {
+    flex-basis: 100%;
+  }
+}
+@media (max-width: 600px) {
+  .hud-sub-bonus {
+    position: absolute;
+    right: 16px;
+    bottom: 84px;
+    max-width: none;
+    padding: 4px 8px;
+    border-radius: 5px;
+    background: #121b2d;
+  }
+  .hud-shop-panel:not([hidden]) ~ .hud-dock-bar .hud-sub-bonus {
+    display: none;
+  }
+  .game-bay .game-viewport {
+    aspect-ratio: auto;
+    height: 570px;
+    min-height: 570px;
+    border-radius: 12px;
+  }
+  .game-bay .game-tab {
+    padding: 10px 6px;
+    min-height: 60px;
+  }
+  .hud-shop-panel {
+    box-sizing: border-box;
+    margin: 0 6px 8px;
+    padding: 12px;
+    max-height: 474px;
+  }
+  .hud-shop-heading {
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .hud-shop-heading h2 {
+    font-size: 18px;
+  }
+  .hud-shop-balance {
+    font-size: 13px;
+  }
+  .hud-eyebrow {
+    font-size: 10px;
+  }
+  .hud-shop-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .hud-item {
+    display: grid;
+    grid-template-columns: 54px minmax(0, 1fr);
+    padding: 10px;
+    column-gap: 10px;
+  }
+  .hud-item-top {
+    grid-column: 1;
+    grid-row: 1 / 5;
+    margin: 0;
+    flex-direction: column;
+    justify-content: start;
+    gap: 0;
+  }
+  .hud-item-icon {
+    display: block;
+    width: 60px;
+    height: 48px;
+  }
+  .hud-item-stock {
+    font-size: 10px;
+    text-align: center;
+  }
+  .hud-item-category {
+    display: none;
+  }
+  .hud-item h3 {
+    grid-column: 2;
+    grid-row: 1;
+    font-size: 15px;
+    min-height: 0;
+    margin: 0;
+  }
+  .hud-item-bonus {
+    grid-column: 2;
+    grid-row: 3;
+    margin: 5px 0 0;
+    font-size: 13px;
+  }
+  .hud-item-actions {
+    grid-column: 1 / -1;
+    grid-row: 5;
+    flex-wrap: nowrap;
+    margin-top: 10px;
+    gap: 6px;
+  }
+  .hud-buy > .icon:first-child {
+    display: none;
+  }
+  .hud-equip,
+  .hud-buy {
+    font-size: 13px;
+    padding: 6px;
+  }
+  .hud-item-actions > * {
+    flex-basis: auto;
+  }
+  .hud-item-stock {
+    font-size: 12px;
+  }
+  .hud-item-description {
+    grid-column: 2;
+    grid-row: 2;
+    margin: 5px 0;
+    font-size: 11px;
+  }
+  .hud-shop-footer {
+    align-items: start;
+    font-size: 12px;
+    gap: 8px;
+  }
+  .hud-shop-footer > * {
+    flex: 1;
+  }
+  .hud-shop-footer strong {
+    text-align: right;
+  }
+  .hud-shop-toggle {
+    padding: 0 10px;
+    gap: 6px;
+    font-size: 14px;
+  }
+  .hud-shop-toggle > .icon {
+    display: none;
+  }
+  .arena-hud-dock .launch-btn {
+    min-width: 110px;
+    padding: 10px;
+    font-size: 12px;
+  }
+}
+
+/* O cockpit continua utilizável nos menores celulares (320 px). */
+@media (max-width: 400px) {
+  .hud-dock-bar {
+    gap: 6px;
+    padding: 8px 6px;
+  }
+  .hud-shop-toggle {
+    min-width: 0;
+    flex: 1;
+    padding: 0 6px;
+    font-size: 12px;
+    gap: 4px;
+  }
+  .hud-shop-toggle b {
+    padding-left: 4px;
+    font-size: 11px;
+  }
+  .arena-hud-dock .launch-btn {
+    min-width: 0;
+    flex: 1;
+    padding: 8px 4px;
+    font-size: 11px;
+    white-space: normal;
+  }
+  .hud-item {
+    min-width: 0;
+  }
+  .hud-item-bonus {
+    white-space: normal;
+  }
+  .hud-item-actions {
+    grid-column: 1 / -1;
+    grid-row: 5;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+  .hud-shop-heading {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 44px;
+  }
+  .hud-shop-heading > div {
+    grid-column: 1;
+  }
+  .hud-shop-balance {
+    grid-column: 1;
+    grid-row: 2;
+    margin: 0;
+  }
+  .hud-close {
+    grid-column: 2;
+    grid-row: 1 / 3;
+  }
+  .hud-shop-footer {
+    flex-wrap: wrap;
+  }
+}
+
+/* A preparação não cobre o filme nem a loja. */
+.arena-intro {
+  position: absolute;
+  bottom: 126px;
+  left: 28px;
+  right: 28px;
+  z-index: 25;
+  pointer-events: none;
+  color: #ecf2f7;
+  text-shadow: 0 2px 12px #000;
+  max-width: 360px;
+  padding: 18px;
+  border-left: 2px solid var(--game-accent);
+  border-radius: 0 14px 14px 0;
+  background: linear-gradient(110deg, #08111fed, #08111f80);
+}
+.arena-intro > span {
+  font: 600 10px system-ui;
+  letter-spacing: 0.18em;
+  color: var(--game-accent);
+}
+.arena-intro p {
+  font: 400 14px/1.5 system-ui;
+  margin: 8px 0 0;
+  max-width: 300px;
+}
+.arena-intro h3 {
+  font:
+    700 clamp(22px, 3vw, 32px)/1.15 'Orbitron',
+    system-ui;
+  margin: 10px 0;
+  letter-spacing: -0.03em;
+}
+.game-bay[data-game='neon_drifter'] .arena-intro h3 {
+  font-style: italic;
+  color: #eda2c2;
+}
+.game-bay[data-game='void_walker'] .arena-intro h3 {
+  color: #acc4e0;
+  letter-spacing: 0.03em;
+}
+.arena-intro img {
+  display: block;
+  width: 100%;
+  height: 64px;
+  object-fit: contain;
+  margin-top: 8px;
+  animation: arena-engine-glow 3s ease-in-out 3;
+}
+.arena-intro .arena-intro-instruction {
+  font-size: 11px;
+  color: #c5d4e3;
+  padding-top: 8px;
+  border-top: 1px solid #ffffff24;
+}
+@keyframes arena-engine-glow {
+  50% {
+    opacity: 0.7;
+  }
+}
+.game-viewport.is-playing .arena-intro,
+.game-viewport:has(#hudShopPanel:not([hidden])) .arena-intro {
+  display: none;
+}
+.game-viewport:not(.is-playing) .jl-identidade,
+.game-viewport:not(.is-playing) .cinema-heading {
+  display: none;
+}
+.debrief-card {
+  --result-accent: #e6c69a;
+  overflow-x: hidden;
+  overflow-y: auto;
+  max-height: calc(100dvh - 32px);
+  border: 1px solid #455365;
+  background: radial-gradient(ellipse at 50% 0, #243549, #0c1625 65%);
+}
+#debriefModal:not(.hidden) .debrief-card {
+  animation: arena-debrief-enter 380ms ease-out both;
+}
+@keyframes arena-debrief-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.debrief-crew {
+  font: 600 10px/1.5 system-ui;
+  letter-spacing: 0.1em;
+  color: var(--result-accent);
+  margin: 0 0 8px;
+}
+.debrief-items {
+  font: 400 12px/1.5 system-ui;
+  color: #c5d4e3;
+  margin: 0 0 16px;
+}
+.debrief-card .stat-card:has(#debriefScore),
+.debrief-card .stat-card:has(#debriefCoins) {
+  border-color: var(--result-accent);
+}
+.debrief-card .stat-value {
+  overflow-wrap: anywhere;
+}
+#debriefModal[data-game='neon_drifter'] .debrief-card {
+  --result-accent: #eda2c2;
+}
+#debriefModal[data-game='void_walker'] .debrief-card {
+  --result-accent: #acc4e0;
+}
+.debrief-card .debrief-tag {
+  color: var(--result-accent);
+  letter-spacing: 0.18em;
+  font: 600 10px system-ui;
+}
+.debrief-card .debrief-header h2 {
+  font-size: clamp(19px, 4vw, 26px);
+  margin: 10px 0 0;
+}
+.debrief-vehicle {
+  display: block;
+  width: 100%;
+  height: 125px;
+  object-fit: contain;
+  margin: 8px 0;
+}
+.debrief-channel {
+  font: 500 12px/1.5 system-ui;
+  color: #bbcedc;
+  text-align: center;
+  margin: 0 0 20px;
+}
+.debrief-card .stat-card {
+  background: #172435a6;
+  border: 1px solid #35455b;
+  border-radius: 12px;
+  padding: 16px 12px;
+}
+.debrief-card .stat-value {
+  font-variant-numeric: tabular-nums;
+}
+#debriefScoreBreakdown,
+#debriefCoins small {
+  display: block;
+  color: #b3c7d8;
+  font: 400 11px/1.5 system-ui;
+  margin-top: 6px;
+}
+.debrief-card .debrief-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.debrief-card .debrief-actions button {
+  flex: 1;
+  min-height: 44px;
+}
+@media (max-width: 600px) {
+  .arena-intro {
+    left: 16px;
+    right: 16px;
+    bottom: 145px;
+    padding: 12px;
+  }
+  .arena-intro p {
+    max-width: 215px;
+    font-size: 12px;
+  }
+  body:has(.game-viewport.is-playing) .topbar-search-wrap,
+  body:has(.game-viewport.is-playing) .top-nav-links {
+    display: none;
+  }
+  .debrief-vehicle {
+    height: 100px;
+  }
+}
+
+.debrief-card .stat-value.highlight {
+  color: var(--result-accent);
+}
+.debrief-card .graph-label {
+  color: #bdcddb;
+  font: 500 11px system-ui;
+}
+.debrief-card .debrief-actions .ghost-btn {
+  color: var(--result-accent);
+  border-color: #45566b;
+}
+
+/* Galeria manual: aproveita as artes locais, sem outro renderer ou temporizador. */
+.arena-gallery {
+  margin-top: 16px;
+  border: 1px solid #35455b;
+  border-radius: 12px;
+  background: #0c1625;
+  color: #ecf2f7;
+}
+.arena-gallery summary {
+  cursor: pointer;
+  padding: 16px;
+  font:
+    600 16px 'Rajdhani',
+    system-ui;
+}
+.arena-gallery summary span {
+  float: right;
+  color: #a9bbcf;
+  font-size: 12px;
+}
+.arena-gallery-track {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 0 16px 16px;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+}
+.arena-gallery figure {
+  --vehicle-accent: #e6c69a;
+  flex: 1 0 220px;
+  min-width: 0;
+  margin: 0;
+  padding: 16px;
+  scroll-snap-align: center;
+  border: 1px solid #35455b;
+  border-radius: 10px;
+  background: radial-gradient(ellipse at 50% 40%, #78604840, #101a29 70%);
+}
+.arena-gallery figure[data-game='neon_drifter'] {
+  --vehicle-accent: #eda2c2;
+  background: linear-gradient(160deg, #41253c, #101a29 70%);
+}
+.arena-gallery figure[data-game='void_walker'] {
+  --vehicle-accent: #acc4e0;
+  background: radial-gradient(ellipse at 80% 30%, #36476a, #101a29 70%);
+}
+.arena-gallery figure > span {
+  color: var(--vehicle-accent);
+  font: 600 10px system-ui;
+  letter-spacing: 0.12em;
+}
+.arena-gallery img {
+  display: block;
+  width: 100%;
+  height: 100px;
+  object-fit: contain;
+}
+.arena-gallery strong {
+  font:
+    700 20px 'Rajdhani',
+    system-ui;
+  color: var(--vehicle-accent);
+}
+.arena-gallery p {
+  font: 400 12px/1.5 system-ui;
+  color: #c5d4e3;
+  margin: 6px 0 0;
+}
+.arena-gallery summary:focus-visible,
+.arena-gallery-track:focus-visible {
+  outline: 2px solid var(--game-accent);
+  outline-offset: 2px;
+}
+@media (max-width: 600px) {
+  .arena-gallery summary span {
+    display: none;
+  }
+  .arena-gallery figure {
+    flex-basis: 85%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .arena-intro img,
+  #debriefModal:not(.hidden) .debrief-card {
+    animation: none;
+  }
+  .arena-gallery-track {
+    scroll-snap-type: none;
+  }
+}

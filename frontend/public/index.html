@@ -1,0 +1,3846 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="var(--color-html-07090e)" />
+    <title>LiveX Games - Plataforma de Gamificação para Lives</title>
+    <meta
+      name="description"
+      content="LiveX Games é a plataforma de gamificação e fidelidade para transmissões ao vivo. Jogue 3 jogos no navegador com física no servidor, apoie streamers via Pix, gire a roleta diária e resgate brindes oficiais com moedas virtuais (Zero Cash-Out)."
+    />
+    <meta
+      name="keywords"
+      content="gamificação de live, live gaming, streamers brasil, livepix, pixgg, jet launcher, neon drifter, void walker, fidelidade twitch, kick streaming, brindes streamer, jogos no navegador"
+    />
+    <meta name="author" content="LiveX Games" />
+    <link rel="canonical" href="https://livexgames.onrender.com/" />
+
+    <!-- Open Graph / Redes Sociais -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://livexgames.onrender.com/" />
+    <meta property="og:title" content="LiveX Games - Plataforma de Gamificação para Lives" />
+    <meta
+      property="og:description"
+      content="3 jogos no navegador com física autoritativa no servidor, lojinha de brindes reais, roleta diária e integração com LivePix e PixGG."
+    />
+    <meta property="og:image" content="/favicon.svg" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="LiveX Games - Gamificação em Tempo Real para Streams" />
+    <meta
+      name="twitter:description"
+      content="Jogue Jet Launcher, Neon Drifter e Void Walker no navegador e resgate brindes nos canais parceiros."
+    />
+    <meta name="twitter:image" content="/favicon.svg" />
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="/manifest.json" />
+    <!-- Fontes locais (ver @font-face no topo de styles.css). O preload adianta as duas
+         usadas acima da dobra (Orbitron na marca/titulos, Rajdhani 500 no corpo), que so
+         seriam descobertas depois de o CSS ser lido. -->
+    <link
+      rel="preload"
+      href="fonts/orbitron-latin-var.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="fonts/rajdhani-latin-500.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link rel="stylesheet" href="styles.css?v=aee400ba10" />
+    <link rel="stylesheet" href="arena-hud.css?v=13932ec4a7" />
+  </head>
+  <body>
+    <!-- ==========================================================================
+       HOMEPAGE (Landing) - Primeira tela para visitantes não autenticados
+       ========================================================================== -->
+    <div id="landingPage" class="landing-page">
+      <header class="landing-topbar">
+        <div class="brand">
+          <div class="logo">
+            <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+              <use href="icons/sprite.svg#gamepad-2"></use>
+            </svg>
+          </div>
+          <div>
+            <span class="brand-name">LIVEX GAMES</span>
+            <span class="brand-sub">Stream Arena Hub</span>
+          </div>
+        </div>
+        <div class="landing-actions">
+          <a
+            href="#catalogo-jogos"
+            class="nav-tool-btn desktop-only"
+            style="text-decoration: none"
+            title="Conheça os 3 jogos da Arena"
+          >
+            <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+              <use href="icons/sprite.svg#gamepad-2"></use>
+            </svg>
+            Jogos
+          </a>
+          <a
+            href="#como-funciona"
+            class="nav-tool-btn desktop-only"
+            style="text-decoration: none"
+            title="Entenda como funciona a plataforma"
+          >
+            <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+              <use href="icons/sprite.svg#book-open"></use>
+            </svg>
+            Como Funciona
+          </a>
+          <button
+            type="button"
+            id="landingStreamersBtn"
+            class="nav-tool-btn desktop-only"
+            title="Ver diretório de streamers e suas lojinhas"
+          >
+            <svg class="icon icon-magenta" aria-hidden="true" focusable="false">
+              <use href="icons/sprite.svg#video"></use>
+            </svg>
+            Streamers
+          </button>
+          <a
+            href="#faq-suporte"
+            class="nav-tool-btn desktop-only"
+            style="text-decoration: none"
+            title="Perguntas frequentes e suporte"
+          >
+            <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+              <use href="icons/sprite.svg#shield"></use>
+            </svg>
+            FAQ
+          </a>
+          <a
+            href="/status"
+            target="_blank"
+            class="nav-tool-btn desktop-only"
+            style="text-decoration: none"
+            title="Painel de Status e Diagnóstico dos Serviços"
+            ><svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+              <use href="icons/sprite.svg#bar-chart-3"></use>
+            </svg>
+            Status</a
+          >
+          <button type="button" id="landingLoginBtn" class="ghost-btn">
+            <svg class="icon icon-yellow" aria-hidden="true" focusable="false">
+              <use href="icons/sprite.svg#key"></use>
+            </svg>
+            Entrar
+          </button>
+          <button type="button" id="landingRegisterBtn" class="primary-btn">
+            <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+              <use href="icons/sprite.svg#rocket"></use>
+            </svg>
+            Criar Conta Grátis
+          </button>
+            <button type="button" id="landingArenaBtn" class="primary-btn hidden">
+              <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#gamepad-2"></use>
+              </svg>
+              <span id="landingArenaBtnLabel">Acessar Arena</span>
+            </button>
+        </div>
+      </header>
+
+      <!-- A homepage nao tinha landmark <main>: o <main class="app-shell"> fica
+           dentro do #appRoot, entao com a landing visivel o documento ficava sem
+           conteudo principal para navegacao por landmarks. Landing e Arena nunca
+           aparecem juntas, logo ha sempre exatamente um <main> visivel. -->
+      <main class="landing-main">
+        <section class="landing-hero">
+          <div class="landing-hero-content">
+            <span class="hero-eyebrow"
+              ><svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#zap"></use>
+              </svg>
+              GAMIFICAÇÃO PARA TRANSMISSÕES AO VIVO</span
+            >
+            <h1>Transforme quem assiste em <span class="grad-text">piloto</span> da sua live.</h1>
+            <p class="hero-desc">
+              Três jogos com física calculada no servidor, uma economia de moedas alimentada pelas
+              suas doações via LivePix e PixGG, e uma lojinha de brindes reais. Tudo isso na tela da
+              sua transmissão, em tempo real.
+            </p>
+            <div class="hero-cta-row">
+              <button
+                type="button"
+                id="heroPlayFreeBtn"
+                class="primary-btn large-btn hero-instant-play-btn"
+                title="Acesso imediato à Arena: experimente grátis no navegador sem cadastro prévio"
+                style="
+                  background: linear-gradient(
+                    110deg,
+                    var(--cyan),
+                    #008cff 52%,
+                    var(--cyan)
+                  );
+                  box-shadow: 0 0 24px var(--color-html-rgba-0-240-255-0-45);
+                  font-weight: 800;
+                  letter-spacing: 0.5px;
+                  display: flex;
+                  flex-direction: column;
+                  align-items: center;
+                  gap: 3px;
+                  padding: 12px 24px;
+                "
+              >
+                <span style="display: flex; align-items: center; gap: 8px; font-size: 15px">
+                  <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                    <use href="icons/sprite.svg#gamepad-2"></use>
+                  </svg>
+                  Começar a Jogar Grátis (Entrar na Arena Agora)
+                </span>
+                <span
+                  style="
+                    font-size: 14px;
+                    opacity: 0.92;
+                    font-weight: 600;
+                    text-transform: none;
+                    letter-spacing: 0;
+                  "
+                >
+                  Acesso instantâneo no navegador • Sem necessidade de cadastro imediato
+                </span>
+              </button>
+              <!-- Era o segundo .primary-btn da mesma linha: dois botoes primarios
+                 lado a lado disputavam a mesma decisao. Vira secundario para dar
+                 um unico foco visual ao hero. A acao e o id seguem os mesmos. -->
+              <button type="button" id="heroRegisterBtn" class="secondary-btn large-btn">
+                <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#rocket"></use>
+                </svg>
+                Criar Minha Conta
+              </button>
+              <button type="button" id="heroLoginBtn" class="secondary-btn large-btn">
+                Já tenho conta
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section class="landing-games" id="catalogo-jogos">
+          <div class="landing-section-header">
+            <span class="section-tag">CATÁLOGO OFICIAL DA ARENA</span>
+            <h2>Escolha seu Jogo: 3 Modos com Física Autoritativa no Servidor</h2>
+            <p class="section-subtitle">
+              Cada jogo possui física própria, cálculo determinístico no servidor contra trapaças,
+              equipamentos dedicados e pontuação no ranking.
+            </p>
+          </div>
+          <div class="landing-games-grid">
+            <article
+              class="landing-game-card jet featured-card"
+              data-game="jet_launcher"
+              style="cursor: pointer"
+            >
+              <span class="lg-icon"
+                ><svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#rocket"></use></svg
+              ></span>
+              <span class="game-category-tag">Modo 1 • Batalha Aérea</span>
+              <h3>Jet Launcher</h3>
+              <p class="lg-protagonist">Capitão Orion • Ás dos Céus</p>
+              <p>
+                Caças furtivos 6ª geração com afterburners duplos, mach diamonds e cone de vapor
+                sônico sobre megalópole neon.
+              </p>
+              <button type="button" class="landing-play-card-btn" data-game="jet_launcher">
+                DECOLAR JATO AGORA
+                <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#zap"></use>
+                </svg>
+              </button>
+            </article>
+            <div
+              class="landing-game-compact drift"
+              data-game="neon_drifter"
+              style="cursor: pointer"
+            >
+              <span class="lg-icon"
+                ><svg class="icon icon-magenta" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#car-front"></use></svg
+              ></span>
+              <span class="game-category-tag">Modo 2 • Corrida Synthwave</span>
+              <h3>Neon Drifter</h3>
+              <p class="lg-protagonist">Luna Vex • Rainha do Drift</p>
+              <p>
+                Cyber-Interceptor 2099 com underglow RGB reativo, faróis laser volumétricos e rodas
+                BBS aero-turbofan.
+              </p>
+              <button type="button" class="landing-play-card-btn" data-game="neon_drifter">
+                ACELERAR DRIFT AGORA
+                <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#zap"></use>
+                </svg>
+              </button>
+            </div>
+            <div class="landing-game-compact void" data-game="void_walker" style="cursor: pointer">
+              <span class="lg-icon"
+                ><svg class="icon icon-purple" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#sparkles"></use></svg
+              ></span>
+              <span class="game-category-tag">Modo 3 • Exploração Quântica</span>
+              <h3>Void Walker</h3>
+              <p class="lg-protagonist">Zara &amp; BOB • Navegadores Quânticos</p>
+              <p>
+                Quantum Dreadnought com anéis magnéticos contra-rotativos, lente gravitacional e
+                drones de escolta orbital.
+              </p>
+              <button type="button" class="landing-play-card-btn" data-game="void_walker">
+                SALTO QUÂNTICO AGORA
+                <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#zap"></use>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- As tres etapas usavam tags diferentes (<section>, <div>, <article>) e a
+           terceira abria <article> e fechava </div>, o que encerrava o container
+           .landing-steps antes da hora. Agora sao itens de uma lista ordenada:
+           alem de fechar corretamente, uma sequencia numerada e semanticamente
+           uma <ol>, e leitores de tela passam a anunciar "lista de 3 itens". -->
+        <section class="landing-how" id="como-funciona">
+          <div class="landing-section-header landing-section-header--aside">
+            <span class="section-tag">FLUXO SIMPLES</span>
+            <h2>Como Funciona a Gamificação em 3 Etapas</h2>
+          </div>
+          <ol class="landing-steps">
+            <li class="landing-step">
+              <span class="step-num" aria-hidden="true">1</span>
+              <div class="step-body">
+                <h3>Crie sua conta grátis</h3>
+                <p>
+                  Cadastro instantâneo, sem cartão e sem burocracia. Você recebe 3 vidas diárias
+                  para decolar e testar suas habilidades.
+                </p>
+              </div>
+            </li>
+            <li class="landing-step">
+              <span class="step-num" aria-hidden="true">2</span>
+              <div class="step-body">
+                <h3>Apoie via LivePix ou PixGG</h3>
+                <p>
+                  Ao apoiar seu streamer favorito, suas doações viram Moedas virtuais creditadas
+                  automaticamente pelo nick da sua conta.
+                </p>
+              </div>
+            </li>
+            <li class="landing-step">
+              <span class="step-num" aria-hidden="true">3</span>
+              <div class="step-body">
+                <h3>Jogue e suba no ranking</h3>
+                <p>
+                  Use suas moedas para equipar itens especiais nos 3 jogos, acumule pontuações
+                  recordes e resgate brindes oficiais da live.
+                </p>
+              </div>
+            </li>
+          </ol>
+        </section>
+
+        <!-- Seção FAQ e Suporte (Melhoria de Navegação Interna e SEO) -->
+        <section class="landing-faq" id="faq-suporte">
+          <div class="landing-section-header landing-section-header--aside">
+            <span class="section-tag">DÚVIDAS FREQUENTES</span>
+            <h2>Perguntas Frequentes &amp; Suporte</h2>
+          </div>
+          <!-- Eram quatro cards identicos lado a lado. Viraram linhas de
+             pergunta e resposta separadas por filetes: mesmo conteudo, sem a
+             repeticao de caixas, e com semantica de lista. As respostas seguem
+             visiveis (nao viraram acordeao) para nao esconder a informacao de
+             conformidade com a Lei 14.790/2023 nem prejudicar a leitura. -->
+          <ul class="faq-list">
+            <li class="faq-item">
+              <h3>Preciso pagar para jogar na Arena?</h3>
+              <p>
+                Não! Todo usuário registrado recebe vidas gratuitas diariamente para competir nos 3
+                jogos. Você também pode experimentar imediatamente o jogo no modo convidado sem
+                custo.
+              </p>
+            </li>
+            <li class="faq-item">
+              <h3>As moedas podem ser convertidas em dinheiro real?</h3>
+              <p>
+                Não. O LiveX Games opera sob estrita conformidade com a
+                <strong>Lei nº 14.790/2023</strong> no modelo Zero Cash-Out. Todas as moedas são
+                pontuações de fidelidade exclusivas para itens de jogo e resgate de brindes físicos
+                ou digitais aprovados pela moderação.
+              </p>
+            </li>
+            <li class="faq-item">
+              <h3>Como funciona a integração com Twitch e Kick?</h3>
+              <p>
+                Você pode vincular sua conta Twitch ou Kick diretamente nas opções da sua conta.
+                Subscritores dos canais parceiros recebem benefícios automáticos como 2 vidas
+                douradas extras por dia e bônus de moedas.
+              </p>
+            </li>
+            <li class="faq-item">
+              <h3>Como streamers podem criar sua própria lojinha?</h3>
+              <p>
+                Streamers parceiros podem acessar a Central do Criador, cadastrar seus webhooks
+                LivePix/PixGG e cadastrar brindes oficiais da live para resgate pelos seus
+                espectadores.
+              </p>
+            </li>
+          </ul>
+        </section>
+
+        <section class="landing-final-cta">
+          <h2>Pronto para decolar na live?</h2>
+          <p>
+            Crie sua conta agora, escolha seu modo favorito e entre na arena antes da próxima
+            transmissão.
+          </p>
+          <button type="button" id="landingFinalRegisterBtn" class="primary-btn large-btn">
+            Criar Conta e Entrar na Arena
+          </button>
+        </section>
+      </main>
+    </div>
+
+    <!-- ==========================================================================
+       APLICAÇÃO (visível somente após login/cadastro)
+       ========================================================================== -->
+    <div id="appRoot" class="hidden">
+      <!-- Topbar -->
+      <header class="topbar">
+        <div
+          class="brand"
+          id="appBrandBtn"
+          role="button"
+          tabindex="0"
+          title="Voltar para a Página Inicial"
+          style="cursor: pointer"
+        >
+          <div class="logo">
+            <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+              <use href="icons/sprite.svg#gamepad-2"></use>
+            </svg>
+          </div>
+          <div>
+            <span class="brand-name">LIVEX GAMES</span>
+            <span class="brand-sub">Stream Arena Hub</span>
+          </div>
+        </div>
+
+        <!-- Links de Ferramentas / Extensões -->
+        <div class="top-nav-links">
+          <button
+            type="button"
+            class="nav-tool-btn"
+            id="navHomeBtn"
+            title="Voltar para a Página Inicial"
+          >
+            <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+              <use href="icons/sprite.svg#home"></use>
+            </svg>
+            Início
+          </button>
+          <button
+            type="button"
+            class="nav-tool-btn"
+            id="navStreamersBtn"
+            title="Ver diretório de streamers e suas lojinhas"
+          >
+            <svg class="icon icon-magenta" aria-hidden="true" focusable="false">
+              <use href="icons/sprite.svg#video"></use>
+            </svg>
+            Streamers
+          </button>
+          <a
+            href="/status"
+            target="_blank"
+            class="nav-tool-btn"
+            title="Painel de Status e Diagnóstico dos Serviços"
+          >
+            <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+              <use href="icons/sprite.svg#bar-chart-3"></use>
+            </svg>
+            Status
+          </a>
+          <button id="soundToggleBtn" class="sound-toggle-btn" title="Alternar Efeitos Sonoros">
+            <span id="soundIcon"
+              ><svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#volume-2"></use></svg
+            ></span>
+          </button>
+        </div>
+
+        <!-- Barra de Busca Rápida E-Commerce (Produtos, Brindes & Streamers) -->
+        <div class="topbar-search-wrap" role="search">
+          <svg class="icon icon-cyan search-icon" aria-hidden="true" focusable="false">
+            <use href="icons/sprite.svg#search"></use>
+          </svg>
+          <input
+            type="search"
+            id="headerGlobalSearch"
+            class="topbar-search-input"
+            placeholder="Buscar itens, brindes ou streamers..."
+            aria-label="Buscar itens da loja, brindes e streamers"
+            autocomplete="off"
+          />
+        </div>
+
+        <!-- Seletor Rápido de Perfil e Status -->
+        <div class="user-status-bar">
+          <div class="lives-indicator is-full" title="Vidas diárias para decolagens">
+            <span class="lives-label">Vidas</span>
+            <!-- Estado inicial; renderLivesIndicator() reescreve no primeiro
+                 render com o saldo real do usuário. -->
+            <span class="lives-hearts" id="livesCounter">
+              <span class="life-pip is-filled">
+                <svg class="icon" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#heart"></use>
+                </svg>
+              </span>
+              <span class="life-pip is-filled">
+                <svg class="icon" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#heart"></use>
+                </svg>
+              </span>
+              <span class="life-pip is-filled">
+                <svg class="icon" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#heart"></use>
+                </svg>
+              </span>
+            </span>
+            <span class="lives-count" id="livesNumeric">3/3</span>
+          </div>
+
+          <!-- Moedas exclusivas do canal selecionado -->
+          <div
+            class="wallet-badge coins-badge"
+            id="walletCoinsBadge"
+            aria-label="Moedas deste canal"
+            title="Suas Moedas LiveX (usadas para compras e resgates de brindes)"
+          >
+            <span class="wallet-icon"
+              ><svg class="icon icon-yellow" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#coins"></use></svg
+            ></span>
+            <span id="walletBalance">0</span>
+            <span class="currency">MOEDAS</span>
+          </div>
+
+          <!-- Indicador de Inventário / Cesta de Itens (E-Commerce) -->
+          <button
+            type="button"
+            class="nav-tool-btn cart-indicator-btn"
+            id="headerCartSummaryBtn"
+            title="Itens adquiridos no seu inventário"
+          >
+            <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+              <use href="icons/sprite.svg#package"></use>
+            </svg>
+            <span class="nav-btn-text">Inventário</span>
+            <span class="badge-count" id="headerCartCount">0 un.</span>
+          </button>
+
+          <!-- Ações de Autenticação para Visitantes (visível quando não autenticado) -->
+                    <div id="visitorAuthActions" class="visitor-auth-actions hidden">
+                      <button
+                        type="button"
+                        id="topbarLoginBtn"
+                        class="ghost-btn"
+                        style="padding: 4px 10px; font-size: 14px"
+                      >
+                        <svg class="icon icon-yellow" aria-hidden="true" focusable="false">
+                          <use href="icons/sprite.svg#key"></use>
+                        </svg>
+                        Entrar
+                      </button>
+                      <button
+                        type="button"
+                        id="topbarRegisterBtn"
+                        class="primary-btn"
+                        style="padding: 4px 10px; font-size: 14px"
+                      >
+                        <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                          <use href="icons/sprite.svg#rocket"></use>
+                        </svg>
+                        Cadastrar
+                      </button>
+                    </div>
+
+                    <!-- Sino de Notificações -->
+                    <div class="notif-bell-wrap hidden" id="notifBell">
+                      <button
+                        type="button"
+                        class="notif-bell-btn"
+                        id="notifBellBtn"
+                        aria-label="Notificações"
+                        title="Notificações"
+                      >
+                        <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                          <use href="icons/sprite.svg#bell"></use>
+                        </svg>
+                        <span class="badge-count notif-badge hidden" id="notifBadge">0</span>
+                      </button>
+                      <div class="notif-panel" id="notifPanel">
+                        <div class="notif-panel-header">
+                          <strong>Notificações</strong>
+                          <button type="button" class="link-button notif-mark-all-btn" id="notifMarkAllBtn">Marcar todas como lidas</button>
+                        </div>
+                        <div class="notif-list" id="notifList"></div>
+                      </div>
+                    </div>
+
+                    <!-- Menu Minha Conta: claro, acessível e sem ambiguidades -->
+          <div class="profile-menu-wrap" id="profileMenuWrap">
+            <div
+              class="user-chip profile-trigger"
+              id="currentUserChip"
+              role="button"
+              tabindex="0"
+              title="Menu Minha Conta e Opções de Perfil"
+            >
+              <div class="account-badge-header">
+                <svg class="icon icon-cyan account-icon" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#user"></use>
+                </svg>
+                <span class="account-title-label">Minha Conta</span>
+              </div>
+              <span class="role-badge" id="userRoleBadge">ESPECTADOR</span>
+              <span class="user-name" id="currentUsername">viewer_alpha</span>
+              <span class="streak-label" id="streakDisplay" title="Streak: dias seguidos jogando"></span>
+              <div id="streamBadgesRow" class="stream-badges-row">
+                <span
+                  id="topbarTwitchBadge"
+                  class="mini-stream-badge twitch hidden"
+                  title="Twitch Conectada"
+                  ><svg class="icon icon-dot icon-purple" aria-hidden="true" focusable="false">
+                    <use href="icons/sprite.svg#circle"></use></svg
+                ></span>
+                <span
+                  id="topbarKickBadge"
+                  class="mini-stream-badge kick hidden"
+                  title="Kick Conectada"
+                  ><svg class="icon icon-dot icon-green" aria-hidden="true" focusable="false">
+                    <use href="icons/sprite.svg#circle"></use></svg
+                ></span>
+                <span
+                  id="topbarSubBadge"
+                  class="mini-stream-badge sub hidden"
+                  title="Subscritor Ativo (+2 Vidas Douradas por Dia e Bônus de Moedas)"
+                  ><svg class="icon icon-yellow" aria-hidden="true" focusable="false">
+                    <use href="icons/sprite.svg#star"></use>
+                  </svg>
+                  ASSINANTE SUB</span
+                >
+              </div>
+              <span class="chip-caret" aria-hidden="true">▾</span>
+            </div>
+
+            <div class="profile-dropdown hidden" id="profileDropdown">
+              <div id="emailStatusContainer" style="padding: 12px 16px; border-bottom: 1px solid var(--border-color, #333); margin-bottom: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                  <span style="font-size: 13px; color: var(--text-muted)">E-mail:</span>
+                  <span id="emailStatusBadge" class="email-status-badge"></span>
+                </div>
+                <button type="button" id="resendVerificationBtn" class="link-button" style="font-size: 12px; width: 100%; text-align: left; display: none;">Reenviar confirmação</button>
+              </div>
+              <button type="button" class="profile-menu-item" id="openEditProfileBtn">
+                <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#id-card"></use>
+                </svg>
+                Editar Perfil
+              </button>
+              <button type="button" class="profile-menu-item" id="openStreamLinkBtn">
+                <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#link"></use>
+                </svg>
+                Vincular Twitch / Kick
+              </button>
+              <button type="button" class="profile-menu-item" id="openMyRedemptionsBtn">
+                <svg class="icon icon-magenta" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#gift"></use>
+                </svg>
+                Meus Resgates
+              </button>
+              <button type="button" class="profile-menu-item" id="openCreatorHubBtn">
+                <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#rocket"></use>
+                </svg>
+                Seja um Streamer LiveX
+              </button>
+              <button type="button" class="profile-menu-item hidden" id="openCreateRewardBtn">
+                <svg class="icon icon-magenta" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#palette"></use>
+                </svg>
+                Criar Brinde
+              </button>
+              <button type="button" class="profile-menu-item hidden" id="openStreamerOrdersBtn">
+                <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#package"></use>
+                </svg>
+                Pedidos da Live
+              </button>
+              <button type="button" class="profile-menu-item hidden" id="openModerationBtn">
+                <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#shield"></use>
+                </svg>
+                Moderação Devs
+              </button>
+              <!-- Atalhos restritos a admin são criados por app.js em tempo de
+                   execução, para não aparecerem no fonte da página pública. -->
+              <div class="profile-menu-divider"></div>
+              <button type="button" class="profile-menu-item danger" id="logoutBtn">
+                <svg class="icon icon-muted" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#log-out"></use>
+                </svg>
+                Sair da Conta
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="app-shell">
+        <!-- A Arena comecava em <h2>, sem titulo de primeiro nivel: quem navega
+             por titulos entrava na pagina sem raiz. O texto fica visivel apenas
+             para leitores de tela porque o cabecalho ja identifica a marca. -->
+        <h1 class="sr-only">Arena LiveX Games</h1>
+
+        <!-- Coluna Esquerda: Streamer, Chat e LivePix -->
+        <aside class="stream-sidebar">
+          <!-- Card do Streamer Selecionado -->
+          <section class="streamer-card" id="streamerSidebarCard">
+            <div class="streamer-header">
+              <div class="streamer-avatar" id="sidebarStreamerAvatar">
+                <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#zap"></use>
+                </svg>
+              </div>
+              <div style="flex: 1; min-width: 0">
+                <div
+                  style="
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 6px;
+                    margin-bottom: 2px;
+                  "
+                >
+                  <span class="live-pill">AO VIVO</span>
+                  <button
+                    type="button"
+                    id="sidebarChangeStreamerBtn"
+                    class="ghost-btn"
+                    style="padding: 2px 8px; font-size: 14px"
+                    title="Escolher outro streamer"
+                  >
+                    Trocar
+                    <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                      <use href="icons/sprite.svg#repeat"></use>
+                    </svg>
+                  </button>
+                </div>
+                <h2
+                  id="sidebarStreamerName"
+                  style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis"
+                >
+                  NightPilot
+                </h2>
+                <p class="stream-info" id="sidebarStreamerInfo">Transmissão Gamificada • LiveX</p>
+              </div>
+            </div>
+            <div
+              style="
+                margin-top: 12px;
+                padding-top: 10px;
+                border-top: 1px solid var(--border);
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+              "
+            >
+              <span style="font-size: 14px; font-family: var(--font-hud); color: var(--text-muted)"
+                >SUAS MOEDAS:</span
+              >
+              <div
+                class="wallet-badge coins-badge"
+                style="padding: 3px 10px; font-size: 14px"
+                title="Suas Moedas LiveX disponíveis"
+              >
+                <span
+                  ><svg class="icon icon-yellow" aria-hidden="true" focusable="false">
+                    <use href="icons/sprite.svg#coins"></use></svg
+                ></span>
+                <span id="sidebarStreamerFichasBalance">0</span>
+                <span class="currency">MOEDAS</span>
+              </div>
+            </div>
+            <!-- Links de Navegação Rápida do Canal -->
+            <div class="sidebar-quick-links" style="margin-top: 10px; display: flex; gap: 6px">
+              <button
+                type="button"
+                id="sidebarGoToGamesBtn"
+                class="ghost-btn"
+                style="flex: 1; font-size: 14px; padding: 5px 6px"
+                title="Ir para a Arena de Jogos"
+              >
+                <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#gamepad-2"></use>
+                </svg>
+                Arena
+              </button>
+              <button
+                type="button"
+                id="sidebarGoToShopBtn"
+                class="ghost-btn"
+                style="flex: 1; font-size: 14px; padding: 5px 6px"
+                title="Ir para a Lojinha do Streamer"
+              >
+                <svg class="icon icon-magenta" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#gift"></use>
+                </svg>
+                Lojinha
+              </button>
+            </div>
+          </section>
+
+          <!-- Roleta posicionada entre o card do streamer e o chat da comunidade. -->
+          <div class="roulette-widget roulette-widget-sidebar" id="mainViewRouletteWidget">
+            <div class="roulette-info">
+              <span class="section-tag">RECOMPENSA DA ARENA</span>
+              <h3>
+                <svg class="icon icon-magenta" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#ferris-wheel"></use>
+                </svg>
+                Roleta Diária do Canal
+              </h3>
+              <p id="mainViewRouletteStatusText" class="modal-subtitle">
+                Gire uma vez por dia e ganhe Moedas (ou uma vida extra)!
+              </p>
+            </div>
+            <button id="mainViewRouletteSpinBtn" type="button" class="chance-btn">
+              <svg class="icon icon-magenta" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#ferris-wheel"></use>
+              </svg>
+              Girar Roleta
+            </button>
+          </div>
+
+          <!-- Chat ao Vivo com Feed Socket.IO -->
+          <section class="chat-section">
+            <div class="chat-header">
+              <h3>Chat da Comunidade</h3>
+              <div style="display: flex; align-items: center; gap: 8px">
+                <span id="botsStatusBadge" class="bots-badge off">BOTS OFF</span>
+                <span class="live-dot"></span>
+              </div>
+            </div>
+            <div id="chatFeed" class="chat-feed">
+              <div class="chat-msg system">
+                <span class="author">[SISTEMA]</span>
+                <span class="content"
+                  >Bem-vindo à Arena Jet Launcher! Ganhe moedas apoiando o streamer no LivePix ou
+                  PixGG e equipe seu jato para bater o recorde da semana!</span
+                >
+              </div>
+            </div>
+            <form id="chatForm" action="#" method="post" class="chat-input-row">
+              <input
+                type="text"
+                id="chatInput"
+                name="message"
+                aria-label="Mensagem para o chat da live"
+                placeholder="Envie uma mensagem..."
+                maxlength="120"
+                autocomplete="off"
+              />
+              <button type="submit" class="send-btn">Enviar</button>
+            </form>
+          </section>
+        </aside>
+
+        <!-- Coluna Central: Game Zone e Loja -->
+        <section class="game-main-content">
+          <!-- Navegacao da Arena. A coluna era um rolo unico de ~4000px com
+               seis secoes empilhadas: para chegar ao ranking o usuario passava
+               por duas lojas inteiras. Cada secao agora pertence a uma aba
+               (data-view) e so uma aparece por vez. -->
+          <nav class="arena-tabs" role="tablist" aria-label="Areas da Arena">
+            <button
+              type="button"
+              class="arena-tab is-active"
+              role="tab"
+              data-arena-tab="jogar"
+              aria-selected="true"
+            >
+              <svg class="icon icon-sm" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#rocket"></use>
+              </svg>
+              Jogar
+            </button>
+            <button type="button" class="arena-tab" role="tab" data-arena-tab="lojas" aria-selected="false">
+              <svg class="icon icon-sm" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#package"></use>
+              </svg>
+              Lojas
+            </button>
+            <button
+              type="button"
+              class="arena-tab"
+              role="tab"
+              data-arena-tab="mural"
+              id="arenaTabMural"
+              aria-selected="false"
+            >
+              <svg class="icon icon-sm" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#message-square-quote"></use>
+              </svg>
+              Mural
+            </button>
+            <button type="button" class="arena-tab" role="tab" data-arena-tab="ranking" aria-selected="false">
+              <svg class="icon icon-sm" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#trophy"></use>
+              </svg>
+              Ranking
+            </button>
+          </nav>
+
+          <!-- Game Zone -->
+          <section class="game-bay" data-view="jogar" data-game="jet_launcher">
+            <!-- Game Switcher Hub Bar -->
+            <nav class="game-hub-nav" id="gameHubNav">
+              <button
+                type="button"
+                class="game-tab active"
+                data-game="jet_launcher"
+                id="tabJetLauncher"
+              >
+                <span class="tab-icon"
+                  ><svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                    <use href="icons/sprite.svg#rocket"></use></svg
+                ></span>
+                <div class="tab-info">
+                  <span class="tab-title">JET LAUNCHER</span>
+                  <span class="tab-sub">Supersonic Cyberpunk</span>
+                </div>
+              </button>
+              <button type="button" class="game-tab" data-game="neon_drifter" id="tabNeonDrifter">
+                <span class="tab-icon"
+                  ><svg class="icon icon-magenta" aria-hidden="true" focusable="false">
+                    <use href="icons/sprite.svg#car-front"></use></svg
+                ></span>
+                <div class="tab-info">
+                  <span class="tab-title">NEON DRIFTER</span>
+                  <span class="tab-sub">Synthwave Highway</span>
+                </div>
+              </button>
+              <button type="button" class="game-tab" data-game="void_walker" id="tabVoidWalker">
+                <span class="tab-icon"
+                  ><svg class="icon icon-purple" aria-hidden="true" focusable="false">
+                    <use href="icons/sprite.svg#sparkles"></use></svg
+                ></span>
+                <div class="tab-info">
+                  <span class="tab-title">VOID WALKER</span>
+                  <span class="tab-sub">Quantum Hyperspace</span>
+                </div>
+              </button>
+            </nav>
+
+            <!-- Painel de Doações ao Vivo, no estilo das placas de LED de
+                 estádio: as mensagens atravessam a tela em rotação contínua.
+                 A animação PARA no hover e no foco de teclado — um botão em
+                 movimento é impossível de acertar, e há um 👍/👎 em cada item. -->
+            <div
+              class="donation-ticker"
+              id="donationTicker"
+              aria-label="Últimas doações do canal"
+              hidden
+            >
+              <span class="ticker-badge">
+                <svg class="icon icon-sm" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#zap"></use>
+                </svg>
+                AO VIVO
+              </span>
+              <div class="ticker-viewport">
+                <div class="ticker-track" id="donationTickerTrack">
+                  <!-- Renderizado via js/donationWall.js -->
+                </div>
+              </div>
+              <button
+                type="button"
+                class="ticker-pause"
+                id="tickerPauseBtn"
+                aria-pressed="false"
+                title="Pausar o painel"
+              >
+                <svg class="icon icon-sm" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#pause"></use>
+                </svg>
+                <span class="sr-only">Pausar o painel de doações</span>
+              </button>
+            </div>
+
+            <div class="game-bay-header">
+              <div>
+                <span class="section-tag">ESCOLHA SUA PRÓXIMA MISSÃO</span>
+                <h2 id="gameZoneTitle">Jet Launcher</h2>
+              </div>
+              <div class="flight-status-tag" id="flightStatusTag">HANGAR PRONTO</div>
+            </div>
+
+            <!-- Tela do jogo -->
+            <div class="game-viewport">
+              <!-- Jogos (games/client, simulação WASM). Montado por app.js. -->
+              <div id="jogoNovoContainer" hidden></div>
+
+              <div class="arena-intro">
+                <span id="arenaIntroCrew">ORION-07 / CAPITÃO ORION</span>
+                <h3 id="arenaIntroTitle">Jet Launcher</h3>
+                <p id="arenaIntroDescription">Do amanhecer à alta atmosfera. Orion está pronto para subir.</p>
+                <img id="arenaIntroVehicle" src="/images/vehicles/jet_launcher.svg" alt="" width="600" height="190">
+                <p class="arena-intro-instruction">Rodada automática. Equipe seus itens e acompanhe.</p>
+              </div>
+              <div class="arena-hud-dock">
+                <section id="hudShopPanel" class="hud-shop-panel" aria-labelledby="inventoryPanelTitle" hidden>
+                  <header class="hud-shop-heading">
+                    <div><span class="hud-eyebrow">INVENTÁRIO / LOJA</span><h2 id="inventoryPanelTitle">Suprimentos de voo</h2></div>
+                    <span id="hudShopBalance" class="hud-shop-balance">0 moedas</span>
+                    <button type="button" id="hudShopClose" class="hud-close" aria-label="Fechar suprimentos">×</button>
+                  </header>
+                  <div id="equippedItemsRow" class="hud-shop-grid"></div>
+                  <footer class="hud-shop-footer"><span>1 unidade por item equipado a cada rodada.</span><strong id="hudBonusPreview">×1 pontos na rodada</strong></footer>
+                </section>
+                <div class="hud-dock-bar">
+                  <button type="button" id="hudShopToggle" class="hud-shop-toggle" aria-expanded="false" aria-controls="hudShopPanel">
+                    <svg class="icon" aria-hidden="true"><use href="icons/sprite.svg#package"></use></svg>
+                    <span>Suprimentos</span><b id="hudLoadoutCount">0/3</b>
+                  </button>
+                  <div id="hudLoadoutSlots" class="hud-loadout-slots" aria-hidden="true"></div>
+                  <span id="hudSubscriberBonus" class="hud-sub-bonus" hidden>SUB +20% PONTOS</span>
+                  <button type="button" id="launchJetBtn" class="launch-btn">
+                    <span class="launch-icon" id="launchIcon"><svg class="icon" aria-hidden="true"><use href="icons/sprite.svg#rocket"></use></svg></span>
+                    <span class="launch-text" id="launchText">COMEÇAR</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Rádio Comunicador Tático do Protagonista -->
+              <div class="pilot-comms-widget" id="pilotCommsWidget">
+                <div class="pilot-avatar-frame">
+                  <div class="pilot-avatar-img" id="pilotAvatarImg">
+                    <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                      <use href="icons/sprite.svg#rocket"></use>
+                    </svg>
+                  </div>
+                  <span class="pilot-status-dot"></span>
+                </div>
+                <div class="pilot-dialog-bubble">
+                  <div class="pilot-header-line">
+                    <span class="pilot-name-tag" id="pilotNameTag">CAPITÃO ORION</span>
+                    <span class="pilot-role-tag" id="pilotRoleTag">ÁS DOS CÉUS</span>
+                  </div>
+                  <p class="pilot-speech" id="pilotSpeech">
+                    "Turbinas aquecidas em standby. Hangar liberado para decolagem, piloto!"
+                  </p>
+                </div>
+              </div>
+
+            </div>
+
+            <details class="arena-gallery">
+              <summary>Conheça os três veículos <span>ORION / VEX / ARK</span></summary>
+              <div class="arena-gallery-track" tabindex="0" role="region" aria-label="Galeria dos veículos. Role para ver os três.">
+                <figure data-game="jet_launcher">
+                  <span>01 / JET LAUNCHER</span>
+                  <img src="/images/vehicles/jet_launcher.svg" alt="Jato ORION-07 com asas enflechadas" width="600" height="190" loading="lazy">
+                  <figcaption><strong>ORION-07</strong><p>Capitão Orion. Do primeiro sol à alta atmosfera.</p></figcaption>
+                </figure>
+                <figure data-game="neon_drifter">
+                  <span>02 / NEON DRIFTER</span>
+                  <img src="/images/vehicles/neon_drifter.svg" alt="Esportivo VEX-01 sob brilho rosa" width="600" height="190" loading="lazy">
+                  <figcaption><strong>VEX-01</strong><p>Luna Vex. O brilho do neon encontra o asfalto molhado.</p></figcaption>
+                </figure>
+                <figure data-game="void_walker">
+                  <span>03 / VOID WALKER</span>
+                  <img src="/images/vehicles/void_walker.svg" alt="Nave modular ARK-03 com giroscópio" width="600" height="190" loading="lazy">
+                  <figcaption><strong>ARK-03</strong><p>Zara e BOB. Uma expedição até a singularidade.</p></figcaption>
+                </figure>
+              </div>
+            </details>
+
+            <!-- Alerta Persistente de Vidas Esgotadas -->
+            <div id="exhaustedLivesBanner" class="exhausted-lives-banner hidden">
+              <span class="exhausted-icon"
+                ><svg class="icon icon-red" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#skull"></use></svg
+              ></span>
+              <div class="exhausted-text">
+                <strong>Vidas Esgotadas!</strong>
+                <span
+                  >Suas vidas voltam sozinhas: +1 a cada 8 horas, e o saldo cheio a cada 24 horas.
+                  Para voltar a voar agora, pegue a Bateria de Vidas no Hangar de Suprimentos — ou
+                  gire a Roleta Diária do canal, que tem +1 Vida Extra entre os prêmios.</span
+                >
+              </div>
+              <button
+                type="button"
+                id="quickRefillLivesBtn"
+                class="sim-pill-btn green"
+                style="margin-left: auto; white-space: nowrap"
+              >
+                Ver Bateria de Vidas
+                <svg class="icon icon-red" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#heart"></use>
+                </svg>
+              </button>
+            </div>
+
+          </section>
+
+          <!-- Loja de Equipamentos da Plataforma.
+               O markup desta seção não existia: renderShopItems() procurava
+               #shopGrid, não achava e desistia em silêncio, então nada do
+               catálogo de /api/shop/items aparecia — inclusive a Bateria de
+               Vidas, que é o único jeito de comprar vida de volta. O CSS
+               (.shop-bay, .shop-grid, .shop-card, .buy-btn) já existia inteiro. -->
+          <section class="shop-bay" id="platformShopSection" data-view="lojas" hidden>
+            <div class="shop-bay-header">
+              <div>
+                <span class="section-tag">LOJA DA PLATAFORMA &middot; LIVEX</span>
+                <h2>Hangar de Suprimentos</h2>
+                <p class="section-subtitle">
+                  <strong>Itens virtuais que mudam a sua partida.</strong> Nitro, escudo, tanque
+                  extra e a Bateria de Vidas, comprados com Moedas. Caem no seu inventário na
+                  hora e servem em qualquer canal da LiveX.
+                </p>
+                <ul class="shop-identity">
+                  <li>
+                    <svg class="icon icon-sm icon-green" aria-hidden="true" focusable="false">
+                      <use href="icons/sprite.svg#zap"></use>
+                    </svg>
+                    Entrega instantânea
+                  </li>
+                  <li>
+                    <svg class="icon icon-sm icon-cyan" aria-hidden="true" focusable="false">
+                      <use href="icons/sprite.svg#gamepad-2"></use>
+                    </svg>
+                    Usado dentro dos jogos
+                  </li>
+                  <li>
+                    <svg class="icon icon-sm icon-cyan" aria-hidden="true" focusable="false">
+                      <use href="icons/sprite.svg#globe"></use>
+                    </svg>
+                    Vale em todos os canais
+                  </li>
+                </ul>
+              </div>
+              <button id="refreshShopBtn" class="ghost-btn">
+                <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#refresh-cw"></use>
+                </svg>
+                Atualizar
+              </button>
+            </div>
+
+            <div id="shopGrid" class="shop-grid">
+              <!-- Renderizado via app.js (renderShopItems) -->
+            </div>
+          </section>
+
+          <!-- Lojinha Oficial do Streamer Selecionado -->
+          <section class="streamer-shop-bay" id="streamerShopSection" data-view="lojas" hidden>
+            <div class="streamer-shop-header">
+              <div class="shop-title-area">
+                <div class="shop-badge-row">
+                  <span class="section-tag">LOJINHA OFICIAL DO CANAL</span>
+                  <span class="compliance-badge"
+                    ><svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                      <use href="icons/sprite.svg#scale"></use>
+                    </svg>
+                    Auditado & Aprovado pelos Devs (Lei 14.790/2023)</span
+                  >
+                </div>
+                <h2>
+                  Brindes de
+                  <span id="mainViewStreamerName" style="color: var(--cyan)">NightPilot</span>
+                </h2>
+                <p class="section-subtitle">
+                  <strong>Recompensas reais, entregues pelo streamer.</strong> Produtos físicos
+                  enviados para a sua casa e vantagens digitais como acesso VIP, resgatados com
+                  Moedas. Exclusivos deste canal — não valem em outro.
+                </p>
+                <ul class="shop-identity">
+                  <li>
+                    <svg class="icon icon-sm icon-magenta" aria-hidden="true" focusable="false">
+                      <use href="icons/sprite.svg#truck"></use>
+                    </svg>
+                    Enviado pelo streamer
+                  </li>
+                  <li>
+                    <svg class="icon icon-sm icon-magenta" aria-hidden="true" focusable="false">
+                      <use href="icons/sprite.svg#heart"></use>
+                    </svg>
+                    Exclusivo deste canal
+                  </li>
+                  <li>
+                    <svg class="icon icon-sm icon-cyan" aria-hidden="true" focusable="false">
+                      <use href="icons/sprite.svg#shield"></use>
+                    </svg>
+                    Aprovado pelos devs
+                  </li>
+                </ul>
+              </div>
+              <div class="shop-actions-group">
+                <button id="openStreamerDirectoryBtn" class="ghost-btn">
+                  <svg class="icon icon-magenta" aria-hidden="true" focusable="false">
+                    <use href="icons/sprite.svg#video"></use>
+                  </svg>
+                  Trocar Streamer
+                </button>
+              </div>
+            </div>
+
+            <!-- Links de Doação do Streamer -->
+            <div class="channel-donate-row">
+              <a
+                id="mainViewLivepixLink"
+                href="#"
+                target="_blank"
+                rel="noopener"
+                class="secondary-btn"
+                ><svg class="icon icon-red" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#heart"></use>
+                </svg>
+                Doar via LivePix</a
+              >
+              <a
+                id="mainViewPixggLink"
+                href="#"
+                target="_blank"
+                rel="noopener"
+                class="secondary-btn"
+                style="border-color: var(--color-f97316); color: var(--color-f97316)"
+                ><svg class="icon icon-yellow" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#flame"></use>
+                </svg>
+                Doar via PixGG</a
+              >
+            </div>
+
+            <!-- Filtros do Catálogo de Brindes -->
+            <div class="shop-catalog-toolbar">
+              <h3>
+                <svg class="icon icon-magenta" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#gift"></use>
+                </svg>
+                Catálogo de Brindes da Live
+              </h3>
+              <div class="shop-actions-group">
+                <button id="filterAllRewardsBtn" class="filter-chip-btn active">Todos</button>
+                <button id="filterPhysicalRewardsBtn" class="filter-chip-btn">
+                  <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                    <use href="icons/sprite.svg#package"></use>
+                  </svg>
+                  Físicos
+                </button>
+                <button id="filterDigitalRewardsBtn" class="filter-chip-btn">
+                  <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                    <use href="icons/sprite.svg#zap"></use>
+                  </svg>
+                  Digitais VIP
+                </button>
+                <button id="refreshStreamerShopBtn" class="ghost-btn">
+                  <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                    <use href="icons/sprite.svg#refresh-cw"></use>
+                  </svg>
+                  Atualizar
+                </button>
+              </div>
+            </div>
+
+            <!-- Grid de Brindes do Streamer Ativo -->
+            <div id="streamerRewardsGrid" class="streamer-rewards-grid">
+              <!-- Renderizado dinamicamente via app.js -->
+            </div>
+
+            <!-- Aparece só quando o catálogo passa de 8 brindes (ver
+                 renderStreamerRewards). -->
+            <button
+              type="button"
+              id="toggleRewardsCatalogBtn"
+              class="ghost-btn rewards-toggle"
+              aria-controls="streamerRewardsGrid"
+              aria-expanded="false"
+              hidden
+            >
+              <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#chevron-down"></use>
+              </svg>
+              <span id="toggleRewardsCatalogLabel">Ver catálogo completo</span>
+            </button>
+          </section>
+
+          <!-- Mural Social de Doações. Nasce oculto: a seção só aparece quando
+               há um canal selecionado e o streamer não desligou o mural. -->
+          <section class="wall-bay" id="donationWallSection" data-view="mural" hidden>
+            <div class="wall-header">
+              <div class="wall-title-area">
+                <span class="section-tag">MURAL SOCIAL DO CANAL</span>
+                <h2>
+                  Mural de Doações de
+                  <span id="wallStreamerName" style="color: var(--magenta)">NightPilot</span>
+                </h2>
+                <p class="section-subtitle">
+                  As mensagens de quem apoiou o canal, em tempo real. Curta as melhores e veja
+                  quem domina o pódio da semana e do mês.
+                </p>
+              </div>
+            </div>
+
+            <div class="wall-filters">
+              <div class="wall-chip-group" id="wallSortFilters" role="group" aria-label="Ordenar o mural">
+                <button type="button" class="wall-chip is-active" data-sort="recent" aria-pressed="true">
+                  <svg class="icon icon-sm icon-cyan" aria-hidden="true" focusable="false">
+                    <use href="icons/sprite.svg#timer"></use>
+                  </svg>
+                  Recentes
+                </button>
+                <button type="button" class="wall-chip" data-sort="likes" aria-pressed="false">
+                  <svg class="icon icon-sm" aria-hidden="true" focusable="false">
+                    <use href="icons/sprite.svg#heart"></use>
+                  </svg>
+                  Mais Amadas
+                </button>
+                <button type="button" class="wall-chip" data-sort="dislikes" aria-pressed="false">
+                  <svg class="icon icon-sm" aria-hidden="true" focusable="false">
+                    <use href="icons/sprite.svg#flame"></use>
+                  </svg>
+                  Mais Polêmicas
+                </button>
+                <button type="button" class="wall-chip" data-sort="donors" aria-pressed="false">
+                  <svg class="icon icon-sm" aria-hidden="true" focusable="false">
+                    <use href="icons/sprite.svg#trophy"></use>
+                  </svg>
+                  Maiores Doadores
+                </button>
+              </div>
+
+              <div class="wall-chip-group" id="wallPeriodFilters" role="group" aria-label="Período do ranking">
+                <button type="button" class="wall-chip is-active" data-period="all" aria-pressed="true">
+                  Sempre
+                </button>
+                <button type="button" class="wall-chip" data-period="weekly" aria-pressed="false">
+                  Esta Semana
+                </button>
+                <button type="button" class="wall-chip" data-period="monthly" aria-pressed="false">
+                  Este Mês
+                </button>
+              </div>
+            </div>
+
+            <!-- Pódio: só renderizado quando a ordenação é um ranking -->
+            <div id="wallPodium" class="wall-podium" hidden>
+              <!-- Renderizado via js/donationWall.js -->
+            </div>
+
+            <div id="wallFeed" class="wall-feed" aria-live="polite" aria-busy="false">
+              <!-- Renderizado via js/donationWall.js -->
+            </div>
+
+            <button type="button" id="wallLoadMoreBtn" class="ghost-btn wall-load-more" hidden>
+              <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#refresh-cw"></use>
+              </svg>
+              Carregar mais
+            </button>
+          </section>
+
+          <!-- Ranking por jogo e período -->
+          <section class="leaderboard-bay" data-view="ranking" hidden>
+            <div class="leaderboard-header">
+              <div>
+                <span class="section-tag">CLASSIFICAÇÃO AO VIVO</span>
+                <h2 id="leaderboardTitle">Ranking de Pilotos</h2>
+              </div>
+              <span class="badge-accent">TOP 10</span>
+            </div>
+
+            <div class="leaderboard-filters">
+              <div class="wall-chip-group" id="rankingGameFilters" role="group" aria-label="Jogo do ranking">
+                <button type="button" class="wall-chip" data-ranking-game="jet_launcher" aria-pressed="false">
+                  Jet Launcher
+                </button>
+                <button type="button" class="wall-chip" data-ranking-game="neon_drifter" aria-pressed="false">
+                  Neon Drifter
+                </button>
+                <button type="button" class="wall-chip" data-ranking-game="void_walker" aria-pressed="false">
+                  Void Walker
+                </button>
+              </div>
+              <div class="wall-chip-group" id="rankingPeriodFilters" role="group" aria-label="Período do ranking">
+                <button type="button" class="wall-chip is-active" data-ranking-period="weekly" aria-pressed="true">
+                  Semanal
+                </button>
+                <button type="button" class="wall-chip" data-ranking-period="monthly" aria-pressed="false">
+                  Mensal
+                </button>
+                <button type="button" class="wall-chip" data-ranking-period="all" aria-pressed="false">
+                  Desde o início
+                </button>
+              </div>
+            </div>
+
+            <div class="leaderboard-table-container">
+              <table class="leaderboard-table">
+                <thead>
+                  <tr>
+                    <th>Pos</th>
+                    <th>Piloto</th>
+                    <th>Perfil</th>
+                    <th>Maior Distância</th>
+                    <th>Melhor Score</th>
+                    <th>Voos</th>
+                  </tr>
+                </thead>
+                <tbody id="leaderboardBody">
+                  <!-- Renderizado via app.js -->
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+        </section>
+      </main>
+
+      <!-- DOCK FLUTUANTE DE SIMULAÇÕES E TESTES -->
+      <aside class="sim-dock collapsed" id="simDock">
+        <div class="sim-dock-header" id="simDockHeader">
+          <span class="sim-dock-title"
+            ><svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+              <use href="icons/sprite.svg#sliders-horizontal"></use>
+            </svg>
+            Centro de Simulação & Testes</span
+          >
+          <span class="sim-dock-toggle" id="simDockToggle">▲</span>
+        </div>
+        <div class="sim-dock-body">
+          <!-- 1. Gestão Rápida de Economia e Vidas -->
+          <div class="sim-group">
+            <span class="sim-group-label">Economia & Vidas:</span>
+            <div class="sim-btn-row">
+              <button id="simAdd1kCoins" class="sim-pill-btn">
+                +1.000
+                <svg class="icon icon-yellow" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#coins"></use>
+                </svg>
+              </button>
+              <button id="simAdd5kCoins" class="sim-pill-btn">
+                +5.000
+                <svg class="icon icon-yellow" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#coins"></use>
+                </svg>
+              </button>
+              <button id="simRefillLives" class="sim-pill-btn green">
+                Restaurar Vidas
+                <svg class="icon icon-red" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#heart"></use>
+                </svg>
+              </button>
+              <button id="simDrainLives" class="sim-pill-btn red">
+                Zerar Vidas
+                <svg class="icon icon-red" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#skull"></use>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- 2. Presets de Decolagem -->
+          <div class="sim-group">
+            <span class="sim-group-label">Presets Rápidos de Decolagem:</span>
+            <div class="sim-btn-row">
+              <button id="presetBasicFlight" class="sim-preset-btn">
+                <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#rocket"></use>
+                </svg>
+                Voo Básico
+              </button>
+              <button id="presetHyperNitro" class="sim-preset-btn">
+                <svg class="icon icon-yellow" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#flame"></use>
+                </svg>
+                Hiper Nitro + Escudo
+              </button>
+              <button id="presetLegendary" class="sim-preset-btn gold">
+                <svg class="icon icon-yellow" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#crown"></use>
+                </svg>
+                Voo Lendário VIP
+              </button>
+            </div>
+          </div>
+
+          <!-- 3. Simulador de Bots de Live -->
+          <div class="sim-group">
+            <span class="sim-group-label">Tráfego de Live (Espectadores Virtuais):</span>
+            <div class="sim-btn-row">
+              <button id="toggleBotsBtn" class="sim-pill-btn purple">
+                <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#bot"></use>
+                </svg>
+                Ativar Modo Bots de Live
+              </button>
+              <button id="triggerBotFlight" class="sim-pill-btn">Simular Outro Piloto</button>
+              <button id="triggerBotDonation" class="sim-pill-btn gold">
+                Simular Doação R$ 50
+              </button>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+    <!-- /#appRoot -->
+
+    <!-- Modal de Login e Cadastro -->
+    <div id="authModal" class="modal-overlay hidden">
+      <div class="modal-card" style="max-width: 440px">
+        <div class="modal-header">
+          <h3 id="authModalTitle">Acesso de Piloto</h3>
+          <button id="closeAuthModal" class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="auth-nav-tabs">
+            <button type="button" id="tabLoginBtn" class="auth-nav-btn active">
+              <svg class="icon icon-yellow" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#key"></use>
+              </svg>
+              Entrar na Conta
+            </button>
+            <button type="button" id="tabRegisterBtn" class="auth-nav-btn">
+              <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#rocket"></use>
+              </svg>
+              Criar Nova Conta
+            </button>
+          </div>
+
+          <!-- Formulário de Login (Para Pilotos, Streamers e Administradores) -->
+          <form id="loginForm" method="post" action="/api/auth/login">
+            <div class="form-group">
+              <label for="loginUsername" class="input-sublabel">Nome de Piloto (Username):</label>
+              <input
+                type="text"
+                id="loginUsername"
+                name="username"
+                placeholder="Digite seu usuário ou admin"
+                required
+                autocomplete="username"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="loginPassword" class="input-sublabel">Senha de Acesso:</label>
+              <input
+                type="password"
+                id="loginPassword"
+                name="password"
+                placeholder="••••••••"
+                required
+                autocomplete="current-password"
+              />
+            </div>
+
+            <button type="submit" class="primary-btn full-width" style="margin-top: 15px">
+              <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#rocket"></use>
+              </svg>
+              Entrar na Plataforma
+            </button>
+            <p style="margin: 12px 0 0; text-align: center; font-size: 13px">
+              <button type="button" id="openForgotPasswordBtn" class="link-button">
+                Esqueci minha senha
+              </button>
+            </p>
+          </form>
+
+          <!-- Formulário de Cadastro Nativo -->
+          <form id="registerForm" class="hidden" method="post" action="/api/auth/register">
+            <div class="onboarding-notice-box">
+              <span
+                ><svg class="icon icon-purple" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#sparkles"></use></svg
+              ></span>
+              <p>
+                Após criar sua conta, vincule sua Twitch ou Kick para desbloquear
+                <strong>+2 vidas douradas por dia de Subscritor</strong> e bônus de moedas!
+              </p>
+            </div>
+
+            <div class="form-group">
+              <label for="regName" class="input-sublabel">Nome Completo:</label>
+              <input
+                type="text"
+                id="regName"
+                name="name"
+                placeholder="Ex: Carlos Eduardo Silva"
+                required
+                minlength="3"
+              />
+            </div>
+
+            <div class="form-row-2col">
+              <div class="form-group">
+                <label for="regPhone" class="input-sublabel">Celular / WhatsApp (com DDD):</label>
+                <input
+                  type="tel"
+                  id="regPhone"
+                  name="phone"
+                  placeholder="(11) 99999-9999"
+                  required
+                  maxlength="15"
+                />
+              </div>
+              <div class="form-group">
+                <label for="regUsername" class="input-sublabel">Nome de Piloto (Username):</label>
+                <input
+                  type="text"
+                  id="regUsername"
+                  name="username"
+                  placeholder="Ex: astro_pilot"
+                  required
+                  minlength="3"
+                  maxlength="30"
+                />
+              </div>
+            </div>
+
+            <div class="form-row-2col">
+              <div class="form-group">
+                <label for="regEmail" class="input-sublabel">E-mail Oficial:</label>
+                <input
+                  type="email"
+                  id="regEmail"
+                  name="email"
+                  placeholder="carlos@exemplo.com"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="regPassword" class="input-sublabel">Senha de Acesso:</label>
+                <input
+                  type="password"
+                  id="regPassword"
+                  name="password"
+                  placeholder="Mínimo 6 caracteres"
+                  required
+                  minlength="6"
+                />
+              </div>
+              <div class="form-group">
+                <label for="regBirthDate" class="input-sublabel">Data de Nascimento:</label>
+                <input type="date" id="regBirthDate" name="birthDate" required />
+                <small
+                  style="display: block; margin-top: 4px; font-size: 12px; color: var(--text-muted)"
+                >
+                  A plataforma é restrita a maiores de 18 anos.
+                </small>
+              </div>
+            </div>
+
+            <label
+              for="regAcceptTerms"
+              style="
+                display: flex;
+                gap: 10px;
+                align-items: flex-start;
+                margin-top: 16px;
+                font-size: 13px;
+                line-height: 1.5;
+                cursor: pointer;
+              "
+            >
+              <input
+                type="checkbox"
+                id="regAcceptTerms"
+                name="acceptedTerms"
+                required
+                style="margin-top: 2px; width: 18px; height: 18px; flex-shrink: 0"
+              />
+              <span>
+                Li e aceito os
+                <a href="/terms.html" target="_blank" rel="noopener" style="color: var(--cyan)"
+                  >Termos de Uso</a
+                >
+                e a
+                <a
+                  href="/terms.html#privacidade"
+                  target="_blank"
+                  rel="noopener"
+                  style="color: var(--cyan)"
+                  >Política de Privacidade</a
+                >.
+              </span>
+            </label>
+
+            <button type="submit" class="primary-btn full-width" style="margin-top: 15px">
+              <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#rocket"></use>
+              </svg>
+              Criar Conta de Piloto
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recuperação de senha: pedido do link -->
+    <div id="forgotPasswordModal" class="modal-overlay hidden">
+      <div class="modal-card" style="max-width: 440px">
+        <h2 style="margin-top: 0">Recuperar acesso</h2>
+        <p style="font-size: 14px; color: var(--text-muted); line-height: 1.5">
+          Informe seu nome de usuário ou o e-mail cadastrado. Enviaremos um link para você escolher
+          uma senha nova.
+        </p>
+        <form id="forgotPasswordForm">
+          <div class="form-group">
+            <label for="forgotIdentifier" class="input-sublabel">Usuário ou e-mail:</label>
+            <input type="text" id="forgotIdentifier" required autocomplete="username" />
+          </div>
+          <p
+            id="forgotPasswordFeedback"
+            class="hidden"
+            style="font-size: 13px; line-height: 1.5"
+          ></p>
+          <div style="display: flex; gap: 10px; margin-top: 16px">
+            <button type="submit" class="config-btn" style="flex: 1">Enviar link</button>
+            <button type="button" class="secondary-btn" data-close-modal="forgotPasswordModal">
+              Fechar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Recuperação de senha: escolha da nova senha (aberto pelo link do e-mail) -->
+    <div id="resetPasswordModal" class="modal-overlay hidden">
+      <div class="modal-card" style="max-width: 440px">
+        <h2 style="margin-top: 0">Escolha uma senha nova</h2>
+        <form id="resetPasswordForm">
+          <div class="form-group">
+            <label for="resetPassword1" class="input-sublabel">Nova senha:</label>
+            <input
+              type="password"
+              id="resetPassword1"
+              required
+              minlength="6"
+              placeholder="Mínimo 6 caracteres"
+              autocomplete="new-password"
+            />
+          </div>
+          <div class="form-group">
+            <label for="resetPassword2" class="input-sublabel">Repita a nova senha:</label>
+            <input
+              type="password"
+              id="resetPassword2"
+              required
+              minlength="6"
+              autocomplete="new-password"
+            />
+          </div>
+          <p
+            id="resetPasswordFeedback"
+            class="hidden"
+            style="font-size: 13px; line-height: 1.5"
+          ></p>
+          <div style="display: flex; gap: 10px; margin-top: 16px">
+            <button type="submit" class="config-btn" style="flex: 1">Salvar senha</button>
+            <button type="button" class="secondary-btn" data-close-modal="resetPasswordModal">
+              Fechar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Aceite de termos para contas criadas antes da exigência -->
+    <div id="acceptTermsModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="acceptTermsTitle">
+      <div class="modal-card" style="max-width: 460px">
+        <div class="modal-header">
+          <div>
+            <span class="modal-tag">LEGAL</span>
+            <h3 id="acceptTermsTitle" style="margin: 0; display: flex; align-items: center; gap: 8px">
+              <svg class="icon icon-cyan" aria-hidden="true" focusable="false" style="width: 20px; height: 20px">
+                <use href="icons/sprite.svg#file-text"></use>
+              </svg>
+              Precisamos de uma confirmação
+            </h3>
+          </div>
+          <button class="close-btn" data-close-modal="acceptTermsModal" aria-label="Fechar">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-subtitle">
+            Sua conta foi criada antes de os Termos de Uso passarem a ser aceitos no cadastro. Para
+            continuar, confirme sua data de nascimento e o aceite.
+          </p>
+          <form id="acceptTermsForm">
+            <div class="form-group">
+              <label for="acceptTermsBirthDate" class="input-sublabel">Data de nascimento:</label>
+              <input type="date" id="acceptTermsBirthDate" class="form-input" required />
+            </div>
+            <label class="checkbox-label" for="acceptTermsCheckbox">
+              <input type="checkbox" id="acceptTermsCheckbox" required />
+              <span>
+                Li e aceito os
+                <a href="/terms.html" target="_blank" rel="noopener" class="text-cyan">Termos de Uso</a>
+                e a
+                <a href="/terms.html#privacidade" target="_blank" rel="noopener" class="text-cyan">Política de Privacidade</a>.
+              </span>
+            </label>
+            <p id="acceptTermsFeedback" class="hidden" role="status"></p>
+            <div class="modal-footer" style="display: flex; gap: 12px">
+              <button type="button" class="secondary-btn" data-close-modal="acceptTermsModal">Agora não</button>
+              <button type="submit" class="config-btn" style="flex: 1">Confirmar e continuar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de Resultado do Voo (Debrief com Gráfico de Trajetória) -->
+    <div id="debriefModal" class="modal-overlay hidden">
+      <div class="modal-card debrief-card" style="max-width: 520px">
+        <div class="debrief-header">
+          <span class="debrief-tag">RELATÓRIO DE MISSÃO</span>
+          <h2 id="debriefTitle">Voo Concluído!</h2>
+        </div>
+
+        <img id="debriefVehicle" class="debrief-vehicle" src="/images/vehicles/jet_launcher.svg" alt="" width="600" height="190">
+        <p id="debriefCrew" class="debrief-crew"></p>
+        <p id="debriefChannel" class="debrief-channel"></p>
+        <div class="debrief-stats">
+          <div class="stat-card">
+            <span class="stat-label">Distância Percorrida</span>
+            <span class="stat-value highlight" id="debriefDistance">0 m</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Altitude Máxima</span>
+            <span class="stat-value" id="debriefAltitude">0 m</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Pontuação Final</span>
+            <span class="stat-value" id="debriefScore">0</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Moedas Ganhas</span>
+            <span class="stat-value gold" id="debriefCoins"
+              >+0
+              <svg class="icon icon-yellow" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#coins"></use></svg
+            ></span>
+          </div>
+        </div>
+
+        <p id="debriefItems" class="debrief-items"></p>
+
+        <!-- Gráfico da Curva de Voo -->
+        <div class="graph-section">
+          <span class="graph-label">Perfil da Trajetória (Altitude vs. Distância):</span>
+          <canvas
+            id="flightGraphCanvas"
+            width="460"
+            height="140"
+            class="flight-graph-canvas"
+          ></canvas>
+        </div>
+
+        <!-- Com a Arena em abas, o ranking deixou de estar logo abaixo do voo.
+             Quem acabou de decolar quer ver onde caiu no placar, entao o
+             debrief leva ate la em vez de exigir que o piloto procure a aba. -->
+        <div class="debrief-actions">
+          <button id="viewRankingBtn" class="ghost-btn">
+            <svg class="icon icon-yellow" aria-hidden="true" focusable="false">
+              <use href="icons/sprite.svg#trophy"></use>
+            </svg>
+            Ver no Ranking
+          </button>
+          <button id="closeDebriefBtn" class="secondary-btn">Voltar ao Hangar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de Edição de Perfil -->
+    <div id="editProfileModal" class="modal-overlay hidden">
+      <div class="modal-card" style="max-width: 480px">
+        <div class="modal-header">
+          <div>
+            <span class="modal-tag">MINHA CONTA</span>
+            <h3>
+              <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#id-card"></use>
+              </svg>
+              Editar Perfil
+            </h3>
+          </div>
+          <button id="closeEditProfileModal" class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="profile-readonly-row">
+            <div class="profile-readonly-item">
+              <span class="input-sublabel">Nome de Piloto</span>
+              <strong id="editProfileUsernameDisplay">viewer_alpha</strong>
+            </div>
+            <div class="profile-readonly-item">
+              <span class="input-sublabel">Perfil</span>
+              <span class="role-badge" id="editProfileRoleDisplay">VIEWER</span>
+            </div>
+          </div>
+          <div class="profile-readonly-item" style="margin-bottom: 16px">
+            <span class="input-sublabel">E-mail</span>
+            <strong id="editProfileEmailDisplay">viewer@exemplo.com</strong>
+          </div>
+
+          <form id="editProfileForm" action="/api/auth/profile" method="post">
+            <div class="form-group">
+              <label for="editProfileNameInput" class="input-sublabel">Nome Completo:</label>
+              <input
+                type="text"
+                id="editProfileNameInput"
+                name="name"
+                placeholder="Seu nome completo"
+                minlength="3"
+                maxlength="80"
+              />
+            </div>
+            <div class="form-group">
+              <label for="editProfilePhoneInput" class="input-sublabel"
+                >Celular / WhatsApp (com DDD):</label
+              >
+              <input
+                type="tel"
+                id="editProfilePhoneInput"
+                name="phone"
+                placeholder="(11) 99999-9999"
+                maxlength="15"
+              />
+            </div>
+            <p class="modal-subtitle" style="margin-top: 4px">
+              Usamos seu nome e telefone apenas para agilizar o envio de brindes físicos resgatados
+              na lojinha.
+            </p>
+            <button type="submit" class="config-btn full-width" style="margin-top: 10px">
+              <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#save"></use>
+              </svg>
+              Salvar Alterações
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de Vinculação de Stream (Twitch & Kick) -->
+    <div id="streamLinkModal" class="modal-overlay hidden">
+      <div class="modal-card stream-link-modal-card" style="max-width: 620px">
+        <div class="modal-header">
+          <div>
+            <span class="modal-tag">ONBOARDING & COMUNIDADE</span>
+            <h3>
+              <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#gamepad-2"></use>
+              </svg>
+              Vincular Contas de Stream
+            </h3>
+          </div>
+          <button id="closeStreamLinkModal" class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-subtitle">
+            Vincule suas contas de transmissão para sincronizar insígnias ao vivo e desbloquear os
+            benefícios automáticos de Subscritor!
+          </p>
+
+          <!-- Banner de Benefícios de Sub -->
+          <div class="sub-benefits-banner">
+            <div class="sub-banner-header">
+              <span class="crown-icon"
+                ><svg class="icon icon-yellow" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#crown"></use></svg
+              ></span>
+              <strong>Benefícios de Subscritor Verificado:</strong>
+            </div>
+            <div class="sub-benefits-grid">
+              <div class="benefit-item">
+                <span class="benefit-icon"
+                  ><svg class="icon icon-gold" aria-hidden="true" focusable="false">
+                    <use href="icons/sprite.svg#heart"></use></svg
+                ></span>
+                <div>
+                  <strong>+2 Vidas Douradas por Dia</strong>
+                  <small
+                    >Além das 3 normais. Voltam à meia-noite (Brasília). Sub na Twitch ou na Kick
+                    — não acumula</small
+                  >
+                </div>
+              </div>
+              <div class="benefit-item">
+                <span class="benefit-icon"
+                  ><svg class="icon icon-yellow" aria-hidden="true" focusable="false">
+                    <use href="icons/sprite.svg#coins"></use></svg
+                ></span>
+                <div>
+                    <strong>+10% de Fichas nas Doações</strong>
+                    <small>Aplicado a doações LivePix e PixGG vinculadas à sua conta</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Banner de Sucesso de Promoção a Sub -->
+          <div id="subCelebrationBanner" class="sub-celebration-banner hidden">
+            <span
+              ><svg class="icon icon-magenta" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#party-popper"></use></svg
+            ></span>
+            <div>
+              <strong>Parabéns! Status de Subscritor Reconhecido!</strong>
+              <p>
+                Você foi promovido para o perfil SUB: suas 2 vidas douradas diárias e o bônus de
+                moedas já estão ativos!
+              </p>
+            </div>
+          </div>
+
+          <!-- Card Twitch -->
+          <div class="stream-provider-card twitch-card">
+            <div class="stream-provider-header">
+              <div class="provider-brand">
+                <span class="brand-icon-square twitch-icon"
+                  ><svg class="icon icon-dot icon-purple" aria-hidden="true" focusable="false">
+                    <use href="icons/sprite.svg#circle"></use></svg
+                ></span>
+                <div>
+                  <h4>Twitch</h4>
+                  <small>Conecte seu canal Twitch</small>
+                </div>
+              </div>
+              <span id="twitchStatusBadge" class="stream-status-pill disconnected"
+                >Desconectado</span
+              >
+            </div>
+            <div class="stream-provider-body">
+              <!-- Aviso de Erro Twitch (Mantém modal visível sem substituir a UI) -->
+              <div
+                id="twitchErrorNotice"
+                class="twitch-error-notice hidden"
+                style="
+                  background: var(--color-rgba-255-51-102-0-15);
+                  border: 1px solid var(--color-rgba-255-51-102-0-4);
+                  border-radius: 8px;
+                  padding: 10px 14px;
+                  margin-bottom: 12px;
+                  font-size: 14px;
+                  color: var(--color-html-ff6b8b);
+                  display: flex;
+                  align-items: flex-start;
+                  gap: 8px;
+                "
+              >
+                <span style="font-size: 16px; line-height: 1"
+                  ><svg class="icon icon-yellow" aria-hidden="true" focusable="false">
+                    <use href="icons/sprite.svg#triangle-alert"></use></svg
+                ></span>
+                <div style="flex: 1">
+                  <strong style="display: block; margin-bottom: 2px; color: var(--color-fff)"
+                    >Falha na Conexão Twitch</strong
+                  >
+                  <span id="twitchErrorMessage"
+                    >Ocorreu um erro durante a autorização com a Twitch.</span
+                  >
+                </div>
+              </div>
+
+              <!-- Indicador de Autorização em Andamento -->
+              <div
+                id="twitchOAuthPendingNotice"
+                class="twitch-pending-notice hidden"
+                style="
+                  background: var(--color-html-rgba-145-70-255-0-15);
+                  border: 1px solid var(--color-html-rgba-145-70-255-0-4);
+                  border-radius: 8px;
+                  padding: 10px 14px;
+                  margin-bottom: 12px;
+                  font-size: 14px;
+                  color: var(--color-html-d8b4fe);
+                  display: flex;
+                  align-items: center;
+                  gap: 8px;
+                "
+              >
+                <span
+                  style="
+                    display: inline-block;
+                    width: 14px;
+                    height: 14px;
+                    border: 2px solid var(--color-html-9146ff);
+                    border-top-color: transparent;
+                    border-radius: 50%;
+                    animation: spin 0.8s linear infinite;
+                  "
+                ></span>
+                <span
+                  >Janela de autorização oficial da Twitch aberta... Conclua o login na janela
+                  popup.</span
+                >
+              </div>
+
+              <div
+                class="provider-action-row"
+                style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center"
+              >
+                <button
+                  type="button"
+                  id="oauthTwitchBtn"
+                  class="twitch-action-btn oauth-twitch-btn"
+                  style="
+                    background: var(--color-html-rgba-145-70-255-0-15);
+                    border: 1px solid var(--color-html-9146ff);
+                    color: var(--color-html-d8b4fe);
+                    font-size: 14px;
+                    padding: 6px 12px;
+                  "
+                >
+                  <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                    <use href="icons/sprite.svg#lock"></use>
+                  </svg>
+                  Conectar via Twitch OAuth
+                </button>
+                <button type="button" id="unlinkTwitchBtn" class="danger-btn hidden">
+                  Desconectar Twitch
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card Kick -->
+          <div class="stream-provider-card kick-card">
+            <div class="stream-provider-header">
+              <div class="provider-brand">
+                <span class="brand-icon-square kick-icon"
+                  ><svg class="icon icon-dot icon-green" aria-hidden="true" focusable="false">
+                    <use href="icons/sprite.svg#circle"></use></svg
+                ></span>
+                <div>
+                  <h4>Kick</h4>
+                  <small>kick.com</small>
+                </div>
+              </div>
+              <span id="kickStatusBadge" class="stream-status-pill disconnected">Desconectado</span>
+            </div>
+            <div class="stream-provider-body">
+              <!-- Aviso de Erro Kick -->
+              <div
+                id="kickErrorNotice"
+                class="twitch-error-notice hidden"
+                style="
+                  background: var(--color-rgba-255-51-102-0-15);
+                  border: 1px solid var(--color-rgba-255-51-102-0-4);
+                  border-radius: 8px;
+                  padding: 10px 14px;
+                  margin-bottom: 12px;
+                  font-size: 14px;
+                  color: var(--color-html-ff6b8b);
+                  display: flex;
+                  align-items: flex-start;
+                  gap: 8px;
+                "
+              >
+                <span style="font-size: 16px; line-height: 1"
+                  ><svg class="icon icon-yellow" aria-hidden="true" focusable="false">
+                    <use href="icons/sprite.svg#triangle-alert"></use></svg
+                ></span>
+                <div style="flex: 1">
+                  <strong style="display: block; margin-bottom: 2px; color: var(--color-fff)"
+                    >Falha na Conexão Kick</strong
+                  >
+                  <span id="kickErrorMessage"
+                    >Ocorreu um erro durante a autorização com a Kick.</span
+                  >
+                </div>
+              </div>
+
+              <!-- Indicador de Autorização em Andamento -->
+              <div
+                id="kickOAuthPendingNotice"
+                class="twitch-pending-notice hidden"
+                style="
+                  background: var(--color-html-rgba-83-252-24-0-12);
+                  border: 1px solid var(--color-rgba-83-252-24-0-4);
+                  border-radius: 8px;
+                  padding: 10px 14px;
+                  margin-bottom: 12px;
+                  font-size: 14px;
+                  color: var(--color-html-baf7a3);
+                  display: flex;
+                  align-items: center;
+                  gap: 8px;
+                "
+              >
+                <span
+                  style="
+                    display: inline-block;
+                    width: 14px;
+                    height: 14px;
+                    border: 2px solid var(--color-53fc18);
+                    border-top-color: transparent;
+                    border-radius: 50%;
+                    animation: spin 0.8s linear infinite;
+                  "
+                ></span>
+                <span
+                  >Janela de autorização oficial da Kick aberta... Conclua o login na janela
+                  popup.</span
+                >
+              </div>
+
+              <div
+                class="provider-action-row"
+                style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center"
+              >
+                <button
+                  type="button"
+                  id="oauthKickBtn"
+                  class="kick-action-btn oauth-kick-btn"
+                  style="
+                    background: var(--color-html-rgba-83-252-24-0-15);
+                    border: 1px solid var(--color-53fc18);
+                    color: var(--color-html-baf7a3);
+                    font-size: 14px;
+                    padding: 6px 12px;
+                  "
+                >
+                  <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                    <use href="icons/sprite.svg#lock"></use>
+                  </svg>
+                  Conectar via Kick OAuth
+                </button>
+                <button type="button" id="unlinkKickBtn" class="danger-btn hidden">
+                  Desconectar Kick
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            id="finishStreamLinkBtn"
+            class="secondary-btn full-width"
+            style="margin-top: 14px"
+          >
+            Concluir e Voltar ao Hangar
+            <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+              <use href="icons/sprite.svg#rocket"></use>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal 1: Criar Novo Brinde (Streamer Studio) -->
+    <div id="createRewardModal" class="modal-overlay hidden">
+      <div class="modal-card" style="max-width: 920px; width: 94vw">
+        <div class="modal-header">
+          <div>
+            <span class="modal-tag">STUDIO DO STREAMER • LIVEX ARENA</span>
+            <h3>
+              <svg class="icon icon-magenta" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#palette"></use>
+              </svg>
+              Criar Novo Brinde da Lojinha
+            </h3>
+          </div>
+          <button id="closeCreateRewardModal" class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-subtitle">
+            Configure as regras do brinde abaixo. Conforme você preenche, veja a prévia exata em
+            tempo real de como o item aparecerá para seus espectadores!
+          </p>
+
+          <!-- Barra de Presets Rápidos -->
+          <div class="reward-presets-bar">
+            <span class="presets-label"
+              ><svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#zap"></use>
+              </svg>
+              PRESETS RÁPIDOS:</span
+            >
+            <button type="button" class="preset-pill-btn" data-preset="tshirt">
+              <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#shirt"></use>
+              </svg>
+              Camiseta Oficial
+            </button>
+            <button type="button" class="preset-pill-btn" data-preset="discord">
+              <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#headphones"></use>
+              </svg>
+              VIP Discord Pass
+            </button>
+            <button type="button" class="preset-pill-btn" data-preset="cap">
+              <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#shirt"></use>
+              </svg>
+              Boné Cyberpunk
+            </button>
+            <button type="button" class="preset-pill-btn" data-preset="mug">
+              <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#coffee"></use>
+              </svg>
+              Caneca Pixel
+            </button>
+            <button type="button" class="preset-pill-btn" data-preset="steam">
+              <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#gamepad-2"></use>
+              </svg>
+              Card Steam R$ 50
+            </button>
+          </div>
+
+          <div class="create-reward-layout">
+            <!-- Coluna 1: Formulário -->
+            <form
+              id="createRewardForm"
+              action="/api/streamer-shop/rewards"
+              method="post"
+              class="create-reward-form"
+            >
+              <div class="form-group">
+                <label for="rewardTitleInput" class="modal-label"
+                  >Título do Brinde / Recompensa:</label
+                >
+                <input
+                  type="text"
+                  id="rewardTitleInput"
+                  name="title"
+                  placeholder="Ex: Camiseta Oficial NightPilot 2026"
+                  required
+                  minlength="3"
+                  maxlength="120"
+                  value="Camiseta Oficial Streamer"
+                />
+              </div>
+
+              <div class="form-row-2col">
+                <div class="form-group">
+                  <label for="rewardDeliveryTypeSelect" class="modal-label">Tipo de Entrega:</label>
+                  <select id="rewardDeliveryTypeSelect" name="delivery_type">
+                    <option value="physical">
+                      <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                        <use href="icons/sprite.svg#package"></use>
+                      </svg>
+                      Físico (Envio / Correios)
+                    </option>
+                    <option value="digital">
+                      <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                        <use href="icons/sprite.svg#zap"></use>
+                      </svg>
+                      Digital (Código / Voucher)
+                    </option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="rewardPriceInput" class="modal-label"
+                    >Preço em Moedas (<svg
+                      class="icon icon-yellow"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <use href="icons/sprite.svg#coins"></use></svg
+                    >):</label
+                  >
+                  <input
+                    type="number"
+                    id="rewardPriceInput"
+                    name="price_coins"
+                    min="50"
+                    max="500000"
+                    step="10"
+                    value="1200"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="rewardStockInput" class="modal-label"
+                  >Quantidade Inicial em Estoque:</label
+                >
+                <input
+                  type="number"
+                  id="rewardStockInput"
+                  name="stock"
+                  min="1"
+                  max="10000"
+                  step="1"
+                  value="15"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="rewardImageFileInput" class="modal-label"
+                  >Arte / Imagem do Brinde:</label
+                >
+                <div class="image-upload-wrapper">
+                  <input
+                    type="file"
+                    id="rewardImageFileInput"
+                    name="image_file"
+                    accept="image/png, image/jpeg, image/webp"
+                    class="file-input"
+                  />
+                  <div class="or-separator"><span>OU INSIRA A URL DIRETA</span></div>
+                  <input
+                    type="text"
+                    id="rewardImageUrlInput"
+                    name="image_url"
+                    aria-label="URL direta da imagem do brinde"
+                    placeholder="https://images.unsplash.com/photo-1521572267360-ee0c2909d518..."
+                    value="https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=600&auto=format&fit=crop&q=80"
+                  />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="rewardDescInput" class="modal-label"
+                  >Descrição Detalhada do Item:</label
+                >
+                <textarea
+                  id="rewardDescInput"
+                  name="description"
+                  rows="3"
+                  placeholder="Detalhes de material, tamanhos disponíveis, regras de uso ou instruções de resgate..."
+                  required
+                  minlength="5"
+                >
+Camiseta 100% algodão penteado com estampa exclusiva da live. Enviada com rastreio para todo o Brasil.</textarea>
+              </div>
+
+              <!-- Alerta de Compliance / Lei Brasileira -->
+              <div class="compliance-alert-card">
+                <div class="compliance-alert-header">
+                  <span
+                    ><svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                      <use href="icons/sprite.svg#scale"></use></svg
+                  ></span>
+                  <strong>Diretrizes de Conformidade Legal (Lei nº 14.790/2023)</strong>
+                </div>
+                <p>
+                  Brindes físicos e vantagens digitais da comunidade permitidos. Proibido
+                  expressamente: apostas, cassinos ou transferências em dinheiro real.
+                </p>
+              </div>
+
+              <button
+                type="submit"
+                id="submitRewardBtn"
+                class="config-btn full-width"
+                style="margin-top: 14px"
+              >
+                <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#rocket"></use>
+                </svg>
+                Enviar Brinde para Aprovação dos Desenvolvedores
+              </button>
+            </form>
+
+            <!-- Coluna 2: Live Holographic Preview Card -->
+            <div class="create-reward-preview-col">
+              <div class="preview-header-tag">
+                <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#eye"></use>
+                </svg>
+                PRÉVIA EM TEMPO REAL NA LOJINHA
+              </div>
+              <div class="live-preview-wrapper">
+                <article class="reward-card live-reward-card" id="liveRewardPreviewCard">
+                  <div class="reward-thumb-wrap">
+                    <img
+                      id="livePreviewImg"
+                      src="icons/reward-placeholder.svg"
+                      alt="Prévia do Brinde"
+                      class="reward-thumb"
+                      data-img-fallback
+                    />
+                    <span class="delivery-pill physical" id="livePreviewDeliveryPill"
+                      ><svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                        <use href="icons/sprite.svg#package"></use>
+                      </svg>
+                      FÍSICO</span
+                    >
+                  </div>
+                  <div class="reward-card-body">
+                    <div class="reward-streamer-line">
+                      <span
+                        >Canal:
+                        <strong class="reward-streamer-name" id="livePreviewStreamer"
+                          >@nightpilot</strong
+                        ></span
+                      >
+                      <span class="reward-stock-badge" id="livePreviewStock">15 un.</span>
+                    </div>
+                    <h4 class="reward-title" id="livePreviewTitle">Camiseta Oficial Streamer</h4>
+                    <p class="reward-desc" id="livePreviewDesc">
+                      Camiseta 100% algodão penteado com estampa exclusiva da live. Enviada com
+                      rastreio para todo o Brasil.
+                    </p>
+                    <div class="reward-footer">
+                      <span class="reward-price-val" id="livePreviewPrice"
+                        >1.200
+                        <svg class="icon icon-yellow" aria-hidden="true" focusable="false">
+                          <use href="icons/sprite.svg#coins"></use></svg
+                      ></span>
+                      <button
+                        type="button"
+                        class="redeem-btn"
+                        disabled
+                        style="opacity: 0.85; cursor: default"
+                      >
+                        Resgatar
+                      </button>
+                    </div>
+                  </div>
+                </article>
+                <div class="preview-note">
+                  <svg class="icon icon-purple" aria-hidden="true" focusable="false">
+                    <use href="icons/sprite.svg#sparkles"></use>
+                  </svg>
+                  Assim que aprovado pelo time de desenvolvimento, este brinde ficará disponível
+                  imediatamente para resgate com as Moedas da plataforma!
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal 2: Painel de Moderação dos Desenvolvedores -->
+    <div id="moderationModal" class="modal-overlay hidden">
+      <div class="modal-card moderation-modal-card" style="max-width: 840px">
+        <div class="modal-header">
+          <div>
+            <span class="modal-tag dev-tag">ACESSO RESTRITO • DESENVOLVEDORES LIVEX</span>
+            <h3>
+              <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#shield"></use>
+              </svg>
+              Painel de Moderação & Auditoria de Brindes
+            </h3>
+          </div>
+          <button id="closeModerationModal" class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-subtitle">
+            Audite itens enviados por streamers antes da liberação ao público. Garanta a
+            conformidade com a política zero-cash-out e verifique a integridade da arte e descrição.
+          </p>
+
+          <!-- Fonte da Fila: Brindes ou Candidaturas de Streamer -->
+          <div class="moderation-source-tabs">
+            <button class="mod-source-btn active" data-source="rewards">
+              <svg class="icon icon-magenta" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#gift"></use>
+              </svg>
+              Brindes
+            </button>
+            <button class="mod-source-btn" data-source="applications">
+              <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#rocket"></use>
+              </svg>
+              Candidaturas de Streamer
+            </button>
+          </div>
+
+          <!-- Filtros de Status da Moderação -->
+          <div class="moderation-tabs-row">
+            <button class="mod-tab-btn active" data-filter="pending">
+              <svg class="icon icon-muted" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#hourglass"></use>
+              </svg>
+              Pendentes de Revisão <span id="pendingCountBadge" class="tab-count-badge">0</span>
+            </button>
+            <button class="mod-tab-btn" data-filter="approved">
+              <svg class="icon icon-green" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#circle-check-big"></use>
+              </svg>
+              Aprovados
+            </button>
+            <button class="mod-tab-btn" data-filter="rejected">
+              <svg class="icon icon-red" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#circle-x"></use>
+              </svg>
+              Rejeitados
+            </button>
+            <button class="mod-tab-btn" data-filter="all">
+              <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#clipboard-list"></use>
+              </svg>
+              Todos os Registros
+            </button>
+            <button id="refreshModerationBtn" class="ghost-btn" style="margin-left: auto">
+              <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#refresh-cw"></use>
+              </svg>
+              Recarregar Fila
+            </button>
+          </div>
+
+          <!-- Lista da Fila de Moderação -->
+          <div id="moderationQueueList" class="moderation-queue-list">
+            <!-- Renderizado dinamicamente via app.js -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal 3: Resgate de Brinde pelo Espectador -->
+    <div id="redeemRewardModal" class="modal-overlay hidden">
+      <div class="modal-card" style="max-width: 520px">
+        <div class="modal-header">
+          <div>
+            <span class="modal-tag">RESGATE DE BRINDE</span>
+            <h3 id="redeemModalTitle">Resgatar Recompensa</h3>
+          </div>
+          <button id="closeRedeemRewardModal" class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <!-- Resumo do Item Selecionado -->
+          <div class="redeem-item-summary">
+            <img
+              id="redeemItemImage"
+              src="icons/reward-placeholder.svg"
+              alt="Brinde"
+              class="redeem-thumb"
+              data-img-fallback
+            />
+            <div class="redeem-details">
+              <h4 id="redeemItemName">Nome do Brinde</h4>
+              <span id="redeemItemStreamer" class="redeem-streamer">Por: nightpilot</span>
+              <div class="redeem-price-row">
+                <span class="redeem-cost" id="redeemItemCost"
+                  >1.200
+                  <svg class="icon icon-yellow" aria-hidden="true" focusable="false">
+                    <use href="icons/sprite.svg#coins"></use></svg
+                ></span>
+                <span class="delivery-pill" id="redeemItemDelivery"
+                  ><svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                    <use href="icons/sprite.svg#package"></use>
+                  </svg>
+                  Físico</span
+                >
+              </div>
+            </div>
+          </div>
+
+          <div class="wallet-check-box">
+            <div>
+              <span class="check-label">Seu Saldo Atual:</span>
+              <span class="check-val" id="redeemCurrentBalance"
+                >1.500
+                <svg class="icon icon-yellow" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#coins"></use></svg
+              ></span>
+            </div>
+            <div>
+              <span class="check-label">Saldo Após Resgate:</span>
+              <span class="check-val highlight" id="redeemPostBalance"
+                >300
+                <svg class="icon icon-yellow" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#coins"></use></svg
+              ></span>
+            </div>
+          </div>
+
+          <!-- Formulário Condicional de Envio Físico -->
+          <form id="redeemRewardForm" action="/api/streamer-shop/redeem" method="post">
+            <input type="hidden" id="redeemTargetRewardId" name="reward_id" value="" />
+            <div id="physicalShippingFields" class="physical-shipping-fields">
+              <span class="shipping-section-title"
+                ><svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#map-pin"></use>
+                </svg>
+                Dados para Envio Físico:</span
+              >
+              <div class="form-group">
+                <label for="shippingNameInput" class="modal-label"
+                  >Nome Completo do Destinatário:</label
+                >
+                <input
+                  type="text"
+                  id="shippingNameInput"
+                  name="shipping_name"
+                  placeholder="Nome completo para a encomenda"
+                />
+              </div>
+              <div class="form-group">
+                <label for="shippingPhoneInput" class="modal-label"
+                  >Telefone / WhatsApp com DDD:</label
+                >
+                <input
+                  type="tel"
+                  id="shippingPhoneInput"
+                  name="shipping_phone"
+                  placeholder="(11) 99999-9999"
+                  maxlength="20"
+                />
+              </div>
+              <div class="form-group">
+                <label for="shippingAddressInput" class="modal-label"
+                  >Endereço Completo com CEP:</label
+                >
+                <textarea
+                  id="shippingAddressInput"
+                  name="shipping_address"
+                  rows="2"
+                  placeholder="Rua, Número, Bairro, Cidade/UF e CEP (Ex: Av. Paulista 1000, Apto 52 - CEP 01310-100)"
+                ></textarea>
+              </div>
+            </div>
+
+            <div id="digitalNoticeField" class="digital-notice-field hidden">
+              <div class="digital-info-card">
+                <span
+                  ><svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                    <use href="icons/sprite.svg#zap"></use></svg
+                ></span>
+                <div>
+                  <strong>Entrega Instantânea:</strong>
+                  <p>
+                    Seu código de resgate exclusivo será gerado na tela imediatamente após a
+                    confirmação e ficará salvo na aba "Meus Resgates".
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              id="confirmRedeemBtn"
+              class="economy-btn full-width"
+              style="margin-top: 14px"
+            >
+              <svg class="icon icon-magenta" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#gift"></use>
+              </svg>
+              Confirmar Resgate
+            </button>
+          </form>
+
+          <!-- Bloco de Sucesso com Voucher na Tela -->
+          <div
+            id="redeemSuccessBlock"
+            class="redeem-success-block hidden"
+            style="
+              margin-top: 16px;
+              padding: 16px;
+              background: var(--color-rgba-0-255-157-0-1);
+              border: 1px solid var(--green);
+              border-radius: 12px;
+              text-align: center;
+            "
+          >
+            <span style="font-size: 32px; display: block; margin-bottom: 6px"
+              ><svg class="icon icon-magenta" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#party-popper"></use></svg
+            ></span>
+            <h4
+              id="redeemSuccessTitle"
+              style="
+                font-family: var(--font-hud);
+                color: var(--color-fff);
+                font-size: 16px;
+                margin-bottom: 6px;
+              "
+            >
+              Resgate Concluído com Sucesso!
+            </h4>
+            <p
+              id="redeemSuccessMsg"
+              style="font-size: 14px; color: var(--text-muted); margin-bottom: 12px"
+            >
+              Seu brinde foi registrado no sistema.
+            </p>
+            <div
+              id="redeemVoucherArea"
+              class="hidden"
+              style="
+                background: var(--color-rgba-0-0-0-0-5);
+                padding: 12px;
+                border-radius: 8px;
+                border: 1px dashed var(--cyan);
+                margin-bottom: 14px;
+              "
+            >
+              <span
+                style="
+                  font-size: 14px;
+                  color: var(--cyan);
+                  letter-spacing: 0.1em;
+                  display: block;
+                  margin-bottom: 4px;
+                "
+                >CÓDIGO DIGITAL EXCLUSIVO (VOUCHER)</span
+              >
+              <div
+                id="redeemVoucherCode"
+                style="
+                  font-family: monospace;
+                  font-size: 20px;
+                  font-weight: bold;
+                  color: var(--color-fff);
+                  letter-spacing: 2px;
+                  user-select: all;
+                "
+              >
+                ---
+              </div>
+              <button
+                type="button"
+                id="copyRedeemVoucherBtn"
+                class="secondary-btn"
+                style="margin-top: 10px; font-size: 14px; padding: 4px 14px"
+              >
+                <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#clipboard-list"></use>
+                </svg>
+                Copiar Código
+              </button>
+            </div>
+            <button
+              type="button"
+              id="closeRedeemSuccessBtn"
+              class="secondary-btn full-width"
+              style="font-size: 14px"
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal 4: Meus Resgates & Códigos -->
+    <div id="myRedemptionsModal" class="modal-overlay hidden">
+      <div class="modal-card" style="max-width: 650px">
+        <div class="modal-header">
+          <div>
+            <span class="modal-tag">HISTÓRICO DO ESPECTADOR</span>
+            <h3>
+              <svg class="icon icon-magenta" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#gift"></use>
+              </svg>
+              Meus Brindes Resgatados
+            </h3>
+          </div>
+          <button id="closeMyRedemptionsModal" class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-subtitle">
+            Consulte seus códigos digitais de vouchers e o status de rastreamento de itens físicos
+            enviados pelos streamers.
+          </p>
+          <div id="myRedemptionsList" class="redemptions-list">
+            <!-- Renderizado via app.js -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal 5: Gestão de Pedidos para o Streamer -->
+    <div id="streamerOrdersModal" class="modal-overlay hidden">
+      <div class="modal-card" style="max-width: 760px">
+        <div class="modal-header">
+          <div>
+            <span class="modal-tag">GESTÃO DE ENVIOS • STREAMER</span>
+            <h3>
+              <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#package"></use>
+              </svg>
+              Pedidos de Brindes dos Espectadores
+            </h3>
+          </div>
+          <button id="closeStreamerOrdersModal" class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-subtitle">
+            Gerencie os resgates feitos pela sua comunidade, visualize o endereço dos ganhadores e
+            informe os códigos de rastreio dos Correios ou transportadora.
+          </p>
+          <div id="streamerOrdersList" class="streamer-orders-list">
+            <!-- Renderizado via app.js -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal 6: Diretório de Streamers -->
+    <div id="streamerDirectoryModal" class="modal-overlay hidden">
+      <div class="modal-card" style="max-width: 720px">
+        <div class="modal-header">
+          <div>
+            <span class="modal-tag">ARENA LIVEX</span>
+            <h3>
+              <svg class="icon icon-magenta" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#video"></use>
+              </svg>
+              Diretório de Streamers
+            </h3>
+          </div>
+          <button id="closeStreamerDirectoryModal" class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-subtitle">
+            Escolha um streamer para ver sua página: seu saldo de Fichas de Apoio com ele, a roleta
+            diária e a lojinha de brindes.
+          </p>
+          <div id="streamerDirectoryGrid" class="streamer-directory-grid">
+            <!-- Renderizado via app.js -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal 8: Central do Criador (Creator Studio Dashboard Completo) -->
+    <div id="creatorHubModal" class="modal-overlay hidden">
+      <div
+        class="modal-card creator-studio-modal"
+        style="
+          max-width: 980px;
+          width: 95%;
+          max-height: 92vh;
+          overflow-y: auto;
+          display: flex;
+          flex-direction: column;
+        "
+      >
+        <div
+          class="modal-header"
+          style="
+            border-bottom: 1px solid var(--color-rgba-0-240-255-0-2);
+            padding-bottom: 14px;
+            margin-bottom: 16px;
+          "
+        >
+          <div style="display: flex; align-items: center; gap: 12px">
+            <div
+              style="
+                font-size: 28px;
+                background: var(--color-rgba-0-240-255-0-1);
+                border: 1px solid var(--cyan);
+                border-radius: 8px;
+                width: 44px;
+                height: 44px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+              "
+            >
+              <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#zap"></use>
+              </svg>
+            </div>
+            <div>
+              <span class="modal-tag">CREATOR STUDIO &bull; LIVEX GAMES</span>
+              <h3 id="creatorHubTitle" style="margin: 0; font-size: 20px">Central do Criador</h3>
+            </div>
+          </div>
+          <button id="closeCreatorHubModal" class="close-btn">&times;</button>
+        </div>
+
+        <div class="modal-body" style="padding: 0">
+          <!-- Aba de Candidatura (visível para viewers/subscribers) -->
+          <div id="creatorHubApplyTab" class="creator-hub-tab-panel" style="padding: 10px 0">
+            <div id="applicationStatusCard" class="application-status-card hidden"></div>
+
+            <form id="streamerApplicationForm" action="/api/streamer-applications" method="post">
+              <p class="modal-subtitle">
+                Conte pra gente sobre o seu canal! Nossa equipe revisa manualmente cada candidatura
+                antes de liberar sua Central do Criador com lojinha própria e webhooks de doação.
+              </p>
+              <div class="form-group">
+                <label for="applicationPlatformSelect" class="modal-label"
+                  >Plataforma Principal:</label
+                >
+                <select id="applicationPlatformSelect" name="platform">
+                  <option value="twitch">Twitch</option>
+                  <option value="kick">Kick</option>
+                  <option value="youtube">YouTube</option>
+                  <option value="other">Outra</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="applicationChannelUrlInput" class="modal-label"
+                  >Link do seu Canal:</label
+                >
+                <input
+                  type="url"
+                  id="applicationChannelUrlInput"
+                  name="channel_url"
+                  placeholder="https://twitch.tv/seu_canal"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="applicationPitchInput" class="modal-label">Conte sobre sua live:</label>
+                <textarea
+                  id="applicationPitchInput"
+                  name="pitch"
+                  rows="3"
+                  minlength="20"
+                  placeholder="Frequência de transmissões, temática, audiência média, por que você quer fazer parte do LiveX Games..."
+                  required
+                ></textarea>
+              </div>
+              <button type="submit" class="config-btn full-width">
+                <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#mail"></use>
+                </svg>
+                Enviar Candidatura para Análise
+              </button>
+            </form>
+          </div>
+
+          <!-- Painel do Streamer (visível para streamer/admin) -->
+          <div id="creatorHubStreamerTab" class="creator-hub-tab-panel hidden">
+            <!-- Navegação por Abas do Studio -->
+            <div class="creator-studio-nav">
+              <button
+                type="button"
+                class="creator-studio-tab-btn active"
+                data-studio-tab="gateways"
+              >
+                <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#zap"></use>
+                </svg>
+                Gateways Pix & APIs
+              </button>
+              <button type="button" class="creator-studio-tab-btn" data-studio-tab="rewards">
+                <svg class="icon icon-magenta" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#gift"></use>
+                </svg>
+                Meus Brindes
+              </button>
+              <button type="button" class="creator-studio-tab-btn" data-studio-tab="orders">
+                <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#package"></use>
+                </svg>
+                Pedidos de Resgate
+              </button>
+              <button type="button" class="creator-studio-tab-btn" data-studio-tab="simulator">
+                <svg class="icon icon-purple" aria-hidden="true" focusable="false">
+                  <use href="icons/sprite.svg#flask-conical"></use>
+                </svg>
+                Simulador de Live
+              </button>
+            </div>
+
+            <!-- Métricas Rápidas no Topo -->
+            <div class="creator-metrics-grid">
+              <div class="creator-metric-card">
+                <span class="metric-label"
+                  ><svg class="icon icon-magenta" aria-hidden="true" focusable="false">
+                    <use href="icons/sprite.svg#gift"></use>
+                  </svg>
+                  Catálogo de Brindes</span
+                >
+                <span class="metric-value" id="dashboardRewardsCount">0</span>
+              </div>
+              <div class="creator-metric-card">
+                <span class="metric-label"
+                  ><svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                    <use href="icons/sprite.svg#package"></use>
+                  </svg>
+                  Total de Pedidos</span
+                >
+                <span class="metric-value" id="dashboardOrdersCount">0</span>
+              </div>
+              <div class="creator-metric-card">
+                <span class="metric-label"
+                  ><svg class="icon icon-muted" aria-hidden="true" focusable="false">
+                    <use href="icons/sprite.svg#hourglass"></use>
+                  </svg>
+                  Pendentes de Envio</span
+                >
+                <span
+                  class="metric-value"
+                  id="dashboardPendingOrdersCount"
+                  style="color: var(--color-html-ffaa00)"
+                  >0</span
+                >
+              </div>
+              <div class="creator-metric-card">
+                <span class="metric-label"
+                  ><svg class="icon icon-dot icon-green" aria-hidden="true" focusable="false">
+                    <use href="icons/sprite.svg#circle"></use>
+                  </svg>
+                  Status do Canal</span
+                >
+                <span
+                  class="metric-value"
+                  style="
+                    font-size: 14px;
+                    color: var(--color-00ff9d);
+                    display: flex;
+                    align-items: center;
+                    gap: 4px;
+                  "
+                >
+                  <span>●</span> Online &bull; Verificado
+                </span>
+              </div>
+            </div>
+
+            <!-- ABA 1: Gateways Pix & APIs -->
+            <div id="studioPanelGateways" class="studio-tab-panel">
+              <p class="modal-subtitle" style="margin-bottom: 14px">
+                Conecte suas credenciais do <strong>PixGG</strong> e <strong>LivePix</strong> para
+                processar doações e convertê-las automaticamente em Moedas com bônus para seus
+                espectadores!
+              </p>
+
+              <!-- Interruptor do Mural Social. Fica aqui, junto dos gateways,
+                   porque é o mural das doações que chegam por eles. -->
+              <div class="wall-switch-card">
+                <div class="wall-switch-text">
+                  <strong>
+                    <svg class="icon icon-magenta" aria-hidden="true" focusable="false">
+                      <use href="icons/sprite.svg#message-square-quote"></use>
+                    </svg>
+                    Mural Social de Doações
+                  </strong>
+                  <span>
+                    Mostra no seu canal as mensagens de quem doou, com curtidas e pódio semanal.
+                    Desligue a qualquer momento se o clima azedar — as doações continuam sendo
+                    registradas normalmente.
+                  </span>
+                </div>
+                <label class="wall-switch-label">
+                  <input type="checkbox" id="wallEnabledToggle" checked />
+                  <span id="wallEnabledLabel">Mural ligado</span>
+                </label>
+              </div>
+
+              <!-- Card PixGG -->
+              <div
+                class="gateway-api-card"
+                style="
+                  background: var(--color-html-rgba-255-102-0-0-06);
+                  border: 1px solid var(--color-html-rgba-255-102-0-0-3);
+                  border-radius: 10px;
+                  padding: 16px;
+                  margin-bottom: 16px;
+                "
+              >
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 10px;
+                    flex-wrap: wrap;
+                    gap: 8px;
+                  "
+                >
+                  <div style="display: flex; align-items: center; gap: 8px">
+                    <span style="font-size: 20px"
+                      ><svg class="icon icon-yellow" aria-hidden="true" focusable="false">
+                        <use href="icons/sprite.svg#flame"></use></svg
+                    ></span>
+                    <strong style="color: var(--color-html-ff8833); font-size: 15px"
+                      >PixGG — Conexão Direta de Aplicação</strong
+                    >
+                  </div>
+                  <div style="display: flex; gap: 6px; align-items: center">
+                    <span id="pixggConnectionBadge" class="stream-status-pill disconnected"
+                      >Não configurado</span
+                    >
+                    <span
+                      id="pixggVerificationBadge"
+                      class="stream-status-pill disconnected"
+                      style="font-size: 14px"
+                      ><svg class="icon icon-dot icon-muted" aria-hidden="true" focusable="false">
+                        <use href="icons/sprite.svg#circle"></use>
+                      </svg>
+                      Não verificado</span
+                    >
+                  </div>
+                </div>
+
+                <!-- Tutorial com Link Oficial -->
+                <div
+                  style="
+                    background: var(--color-rgba-0-0-0-0-25);
+                    border-left: 3px solid var(--color-html-ff8833);
+                    padding: 10px 14px;
+                    border-radius: 4px;
+                    margin-bottom: 14px;
+                    font-size: 14px;
+                    line-height: 1.5;
+                    color: var(--color-html-ddd);
+                  "
+                >
+                  <div
+                    style="font-weight: bold; color: var(--color-html-ff8833); margin-bottom: 4px"
+                  >
+                    <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                      <use href="icons/sprite.svg#book-open"></use>
+                    </svg>
+                    Onde obter as chaves no PixGG:
+                  </div>
+                  <div>
+                    1. Acesse suas aplicações em:
+                    <a
+                      href="https://beta.pixgg.com/aplicacoes"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="studio-portal-link"
+                      style="color: var(--color-html-ffaa33); font-weight: bold"
+                      >beta.pixgg.com/aplicacoes
+                      <svg class="icon icon-green" aria-hidden="true" focusable="false">
+                        <use href="icons/sprite.svg#arrow-up-right"></use></svg
+                    ></a>
+                  </div>
+                  <div>
+                    2. Crie ou abra sua aplicação para copiar o <strong>Client ID</strong> e o
+                    <strong>Client Secret</strong>.
+                  </div>
+                  <div>
+                    3. Insira-os abaixo, clique em <strong>Salvar Credenciais</strong> e depois em
+                    <strong>Testar Conexão</strong> para validar o status.
+                  </div>
+                </div>
+
+                <div
+                  style="
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 10px;
+                    margin-bottom: 10px;
+                  "
+                >
+                  <div class="form-group" style="margin-bottom: 0">
+                    <label for="pixggClientIdInput" class="input-sublabel"
+                      >Client ID da Aplicação PixGG:</label
+                    >
+                    <input
+                      type="text"
+                      id="pixggClientIdInput"
+                      placeholder="Ex: app_1a1cd6ff06b54012a0a9cb62e7efdca7"
+                    />
+                  </div>
+                  <div class="form-group" style="margin-bottom: 0">
+                    <label for="pixggClientSecretInput" class="input-sublabel"
+                      >Client Secret da Aplicação PixGG:</label
+                    >
+                    <input
+                      type="password"
+                      id="pixggClientSecretInput"
+                      placeholder="Cole seu Client Secret da PixGG..."
+                    />
+                  </div>
+                </div>
+
+                <div
+                  style="
+                    display: flex;
+                    gap: 8px;
+                    flex-wrap: wrap;
+                    align-items: center;
+                    margin-bottom: 12px;
+                  "
+                >
+                  <button
+                    type="button"
+                    id="savePixggApiBtn"
+                    class="config-btn"
+                    style="background: var(--color-html-ff6600)"
+                  >
+                    <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                      <use href="icons/sprite.svg#zap"></use>
+                    </svg>
+                    Salvar Credenciais PixGG
+                  </button>
+                  <button
+                    type="button"
+                    id="verifyPixggApiBtn"
+                    class="ghost-btn"
+                    style="border-color: var(--color-html-ff8833); color: var(--color-html-ff8833)"
+                  >
+                    <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                      <use href="icons/sprite.svg#search"></use>
+                    </svg>
+                    Testar Conexão / Verificar Status
+                  </button>
+                  <a
+                    href="https://beta.pixgg.com/aplicacoes"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="studio-portal-link"
+                    ><svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                      <use href="icons/sprite.svg#globe"></use>
+                    </svg>
+                    Abrir beta.pixgg.com/aplicacoes
+                    <svg class="icon icon-green" aria-hidden="true" focusable="false">
+                      <use href="icons/sprite.svg#arrow-up-right"></use></svg
+                  ></a>
+                </div>
+
+                <!-- Caixa de Verificação da API PixGG -->
+                <div id="pixggVerificationBox" class="verification-status-card untested">
+                  <span
+                    >ℹ️ Clique em "Testar Conexão" para validar a prontidão das credenciais
+                    PixGG.</span
+                  >
+                </div>
+              </div>
+
+              <!-- Card LivePix -->
+              <div
+                class="gateway-api-card"
+                style="
+                  background: var(--color-html-rgba-145-70-255-0-06);
+                  border: 1px solid var(--color-html-rgba-145-70-255-0-3);
+                  border-radius: 10px;
+                  padding: 16px;
+                  margin-bottom: 16px;
+                "
+              >
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 10px;
+                    flex-wrap: wrap;
+                    gap: 8px;
+                  "
+                >
+                  <div style="display: flex; align-items: center; gap: 8px">
+                    <span style="font-size: 20px"
+                      ><svg class="icon icon-red" aria-hidden="true" focusable="false">
+                        <use href="icons/sprite.svg#heart"></use></svg
+                    ></span>
+                    <strong style="color: var(--color-html-bb86fc); font-size: 15px"
+                      >LivePix — Conexão Direta de Aplicação</strong
+                    >
+                  </div>
+                  <div style="display: flex; gap: 6px; align-items: center">
+                    <span id="livepixConnectionBadge" class="stream-status-pill disconnected"
+                      >Não configurado</span
+                    >
+                    <span
+                      id="livepixVerificationBadge"
+                      class="stream-status-pill disconnected"
+                      style="font-size: 14px"
+                      ><svg class="icon icon-dot icon-muted" aria-hidden="true" focusable="false">
+                        <use href="icons/sprite.svg#circle"></use>
+                      </svg>
+                      Não verificado</span
+                    >
+                  </div>
+                </div>
+
+                <!-- Tutorial com Link Oficial -->
+                <div
+                  style="
+                    background: var(--color-rgba-0-0-0-0-25);
+                    border-left: 3px solid var(--color-html-bb86fc);
+                    padding: 10px 14px;
+                    border-radius: 4px;
+                    margin-bottom: 14px;
+                    font-size: 14px;
+                    line-height: 1.5;
+                    color: var(--color-html-ddd);
+                  "
+                >
+                  <div
+                    style="font-weight: bold; color: var(--color-html-bb86fc); margin-bottom: 4px"
+                  >
+                    <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                      <use href="icons/sprite.svg#book-open"></use>
+                    </svg>
+                    Onde obter as chaves no LivePix:
+                  </div>
+                  <div>
+                    1. Acesse as configurações de API da sua conta em:
+                    <a
+                      href="https://dashboard.livepix.gg/settings/api"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="studio-portal-link"
+                      style="color: var(--color-html-bb86fc); font-weight: bold"
+                      >dashboard.livepix.gg/settings/api
+                      <svg class="icon icon-green" aria-hidden="true" focusable="false">
+                        <use href="icons/sprite.svg#arrow-up-right"></use></svg
+                    ></a>
+                  </div>
+                  <div>
+                    2. Crie sua aplicação e copie o <strong>Client ID</strong> e o
+                    <strong>Client Secret</strong>.
+                  </div>
+                  <div>
+                    3. Insira-os abaixo, clique em <strong>Conectar LivePix</strong> e depois em
+                    <strong>Testar Conexão</strong> para validar o status.
+                  </div>
+                </div>
+
+                <div
+                  style="
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 10px;
+                    margin-bottom: 10px;
+                  "
+                >
+                  <div class="form-group" style="margin-bottom: 0">
+                    <label for="livepixClientIdInput" class="input-sublabel"
+                      >Client ID da Aplicação LivePix:</label
+                    >
+                    <input
+                      type="text"
+                      id="livepixClientIdInput"
+                      placeholder="Ex: 61021c7bdabe5e001225b65b"
+                    />
+                  </div>
+                  <div class="form-group" style="margin-bottom: 0">
+                    <label for="livepixClientSecretInput" class="input-sublabel"
+                      >Client Secret da Aplicação LivePix:</label
+                    >
+                    <input
+                      type="password"
+                      id="livepixClientSecretInput"
+                      placeholder="Cole seu Client Secret da LivePix..."
+                    />
+                  </div>
+                </div>
+
+                <div
+                  style="
+                    display: flex;
+                    gap: 8px;
+                    flex-wrap: wrap;
+                    align-items: center;
+                    margin-bottom: 12px;
+                  "
+                >
+                  <button
+                    type="button"
+                    id="saveLivepixApiBtn"
+                    class="config-btn"
+                    style="background: var(--color-html-9146ff)"
+                  >
+                    <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                      <use href="icons/sprite.svg#zap"></use>
+                    </svg>
+                    Conectar LivePix
+                  </button>
+                  <button
+                    type="button"
+                    id="verifyLivepixApiBtn"
+                    class="ghost-btn"
+                    style="border-color: var(--color-html-9146ff); color: var(--color-html-bb86fc)"
+                  >
+                    <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                      <use href="icons/sprite.svg#search"></use>
+                    </svg>
+                    Testar Conexão / Verificar Status
+                  </button>
+                  <a
+                    href="https://dashboard.livepix.gg/settings/api"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="studio-portal-link"
+                    ><svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                      <use href="icons/sprite.svg#globe"></use>
+                    </svg>
+                    Abrir dashboard.livepix.gg/settings/api
+                    <svg class="icon icon-green" aria-hidden="true" focusable="false">
+                      <use href="icons/sprite.svg#arrow-up-right"></use></svg
+                  ></a>
+                </div>
+
+                <!-- Caixa de Verificação da API LivePix -->
+                <div id="livepixVerificationBox" class="verification-status-card untested">
+                  <span
+                    >ℹ️ Clique em "Testar Conexão" para validar suas credenciais com o servidor
+                    OAuth2 da LivePix.</span
+                  >
+                </div>
+              </div>
+            </div>
+
+            <!-- ABA 2: Meus Brindes -->
+            <div id="studioPanelRewards" class="studio-tab-panel hidden">
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  margin-bottom: 14px;
+                "
+              >
+                <div>
+                  <h4 style="margin: 0 0 4px 0; color: var(--color-fff)">
+                    <svg class="icon icon-magenta" aria-hidden="true" focusable="false">
+                      <use href="icons/sprite.svg#gift"></use>
+                    </svg>
+                    Catálogo de Brindes do Streamer
+                  </h4>
+                  <span style="font-size: 14px; color: var(--text-muted)"
+                    >Brindes cadastrados são auditados pela equipe antes de serem disponibilizados
+                    para resgate na sua lojinha.</span
+                  >
+                </div>
+                <button
+                  type="button"
+                  id="studioOpenCreateRewardBtn"
+                  class="config-btn"
+                  style="white-space: nowrap"
+                >
+                  <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                    <use href="icons/sprite.svg#plus"></use>
+                  </svg>
+                  Cadastrar Novo Brinde
+                </button>
+              </div>
+              <div
+                id="studioRewardsListContainer"
+                style="
+                  display: grid;
+                  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+                  gap: 12px;
+                "
+              >
+                <div
+                  style="
+                    color: var(--text-muted);
+                    font-size: 14px;
+                    grid-column: 1 / -1;
+                    text-align: center;
+                    padding: 30px;
+                  "
+                >
+                  Carregando brindes...
+                </div>
+              </div>
+            </div>
+
+            <!-- ABA 3: Pedidos de Resgate -->
+            <div id="studioPanelOrders" class="studio-tab-panel hidden">
+              <div style="margin-bottom: 14px">
+                <h4 style="margin: 0 0 4px 0; color: var(--color-fff)">
+                  <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                    <use href="icons/sprite.svg#package"></use>
+                  </svg>
+                  Pedidos dos Espectadores
+                </h4>
+                <span style="font-size: 14px; color: var(--text-muted)"
+                  >Acompanhe os resgates de brindes feitos pelos seus viewers e informe o código de
+                  rastreamento dos Correios.</span
+                >
+              </div>
+              <div id="studioOrdersListContainer" style="overflow-x: auto">
+                <div
+                  style="
+                    color: var(--text-muted);
+                    font-size: 14px;
+                    text-align: center;
+                    padding: 30px;
+                  "
+                >
+                  Carregando pedidos...
+                </div>
+              </div>
+            </div>
+
+            <!-- ABA 4: Simulador de Live -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================================================
+       MODAL: ROLETA HOLOGRÁFICA CIBERNÉTICA (CYBER ROULETTE)
+       ========================================================================== -->
+    <div id="cyberRouletteModal" class="modal-overlay hidden">
+      <div class="modal-card cyber-roulette-card">
+        <button
+          type="button"
+          class="close-btn"
+          id="closeCyberRouletteModalBtn"
+          title="Fechar Roleta"
+        >
+          &times;
+        </button>
+
+        <div class="cyber-roulette-header">
+          <span class="cyber-badge"
+            ><svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+              <use href="icons/sprite.svg#zap"></use>
+            </svg>
+            RECOMPENSA DIÁRIA</span
+          >
+          <h3 id="cyberRouletteStreamerTitle" class="cyber-modal-title">
+            <svg class="icon icon-magenta" aria-hidden="true" focusable="false">
+              <use href="icons/sprite.svg#ferris-wheel"></use>
+            </svg>
+            Roleta Holográfica da Live
+          </h3>
+          <p id="cyberRouletteSubtitle" class="cyber-modal-subtitle">
+            Gire uma vez por dia e ganhe Moedas, Vidas Extras ou Itens Raros para os jogos!
+          </p>
+        </div>
+
+        <!-- Container do Canvas da Roleta com Moldura Neon -->
+        <div class="cyber-wheel-stage">
+          <div class="cyber-wheel-ambient-glow"></div>
+          <canvas id="cyberRouletteCanvas" width="420" height="420"></canvas>
+        </div>
+
+        <!-- Ações da Roleta -->
+        <div class="cyber-roulette-actions">
+          <button
+            type="button"
+            id="cyberRouletteSpinActionBtn"
+            class="chance-btn pulse-glow cyber-spin-btn"
+          >
+            <span
+              ><svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#zap"></use></svg
+            ></span>
+            <span id="cyberRouletteSpinActionLabel">GIRAR ROLETA AGORA</span>
+          </button>
+          <p id="cyberRouletteStatusFooter" class="cyber-spin-footer-text">
+            1 giro grátis por dia neste canal.
+          </p>
+        </div>
+
+        <!-- Card Holográfico de Resultado do Prêmio (Sobreposto ao finalizar) -->
+        <div id="cyberRoulettePrizeOverlay" class="cyber-prize-overlay hidden">
+          <div class="cyber-prize-modal">
+            <div class="cyber-prize-confetti-badge">
+              <svg class="icon icon-magenta" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#party-popper"></use>
+              </svg>
+              PARABÉNS!
+            </div>
+            <div id="cyberPrizeIcon" class="cyber-prize-icon">
+              <svg class="icon icon-magenta" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#gift"></use>
+              </svg>
+            </div>
+            <h3 id="cyberPrizeName" class="cyber-prize-title">Prêmio Conquistado</h3>
+            <p id="cyberPrizeDescription" class="cyber-prize-desc">
+              O prêmio foi adicionado com sucesso ao seu inventário ou carteira!
+            </p>
+            <div id="cyberPrizeTypeTag" class="cyber-prize-tag">Moedas LiveX</div>
+            <button
+              type="button"
+              id="cyberPrizeClaimBtn"
+              class="economy-btn"
+              style="margin-top: 16px; width: 100%"
+            >
+              <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+                <use href="icons/sprite.svg#rocket"></use>
+              </svg>
+              Reivindicar e Continuar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================================================
+       MODAL: INVENTÁRIO DO PILOTO
+       O botão "Inventário" do topo apontava para #shopGrid / #inventoryGrid, que
+       nunca existiram no HTML: o clique não fazia nada. O painel de equipamentos
+       da Arena também não serve de inventário, porque só mostra os itens do jogo
+       aberto no momento — aqui aparece tudo o que o piloto possui, nos 4 jogos.
+       ========================================================================== -->
+    <div id="inventoryModal" class="modal-overlay hidden">
+      <div class="modal-card" style="max-width: 620px">
+        <div class="modal-header">
+          <div style="display: flex; align-items: center; gap: 10px">
+            <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+              <use href="icons/sprite.svg#package"></use>
+            </svg>
+            <div>
+              <h3 style="margin: 0; font-size: 18px; font-family: var(--font-hud)">
+                Inventário do Piloto
+              </h3>
+              <p class="modal-subtitle" style="margin: 2px 0 0 0; font-size: 14px">
+                Todos os equipamentos que você possui, por jogo
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            class="close-btn"
+            id="closeInventoryModalBtn"
+            title="Fechar Inventário"
+          >
+            &times;
+          </button>
+        </div>
+        <div class="modal-body">
+          <div id="inventoryEmptyState" class="empty-state-notice">
+            <svg
+              class="icon icon-cyan"
+              style="width: 36px; height: 36px; margin: 0 auto 10px auto; display: block"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <use href="icons/sprite.svg#package"></use>
+            </svg>
+            <p style="font-weight: 700; color: var(--color-fff); margin-bottom: 4px">
+              Seu inventário está vazio
+            </p>
+            <p style="font-size: 14px; color: var(--text-muted)">
+              Ganhe Moedas decolando na Arena e compre equipamentos no hangar para turbinar seus
+              próximos voos!
+            </p>
+          </div>
+          <div id="inventoryItemsList" class="hidden"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rodapé Institucional e Jurídico (Lei nº 14.790/2023 & LGPD) -->
+    <footer class="site-footer">
+      <div class="footer-content">
+        <div class="footer-brand">
+          <div
+            class="brand-logo"
+            style="
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              font-weight: 800;
+              font-family: var(--font-hud);
+              font-size: 18px;
+              color: var(--color-fff);
+            "
+          >
+            <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+              <use href="icons/sprite.svg#gamepad-2"></use>
+            </svg>
+            LIVEX GAMES
+          </div>
+          <p class="footer-disclaimer">
+            Plataforma de gamificação e fidelidade interativa para transmissões ao vivo. Todas as
+            moedas e pontos obtidos são créditos virtuais sem valor de resgate em moeda corrente
+            (Zero-Cash-Out). Vedada expressamente a oferta de saldos para apostas ou cassinos (Lei
+            nº 14.790/2023).
+          </p>
+          <div class="footer-badge-compliance">
+            <svg class="icon icon-cyan" aria-hidden="true" focusable="false">
+              <use href="icons/sprite.svg#scale"></use>
+            </svg>
+            <span>Conformidade com a Lei nº 14.790/2023 • LGPD</span>
+          </div>
+        </div>
+
+        <div class="footer-columns-grid">
+          <!-- Coluna 1: Jogos da Arena -->
+          <div class="footer-nav-col">
+            <h3 class="footer-col-title">Jogos da Arena</h3>
+            <ul class="footer-links-list">
+              <li><a href="#catalogo-jogos" class="footer-nav-link">Catálogo Completo</a></li>
+              <li><a href="#catalogo-jogos" class="footer-nav-link">Jet Launcher (Aéreo)</a></li>
+              <li><a href="#catalogo-jogos" class="footer-nav-link">Neon Drifter (Drift)</a></li>
+              <li><a href="#catalogo-jogos" class="footer-nav-link">Void Walker (Espacial)</a></li>
+              <li><a href="#como-funciona" class="footer-nav-link">Como Funciona</a></li>
+            </ul>
+          </div>
+
+          <!-- Coluna 2: E-Commerce & Comunidade -->
+          <div class="footer-nav-col">
+            <h3 class="footer-col-title">Lojas &amp; Comunidade</h3>
+            <ul class="footer-links-list">
+              <li>
+                <button type="button" id="footerStreamersBtn" class="footer-btn-link">
+                  Diretório de Streamers
+                </button>
+              </li>
+              <li><a href="#loja-brindes" class="footer-nav-link">Lojinha de Brindes</a></li>
+              <li>
+                <button type="button" id="footerRouletteBtn" class="footer-btn-link">
+                  Roleta Diária
+                </button>
+              </li>
+              <li>
+                <button type="button" id="footerCreatorBtn" class="footer-btn-link">
+                  Central do Criador
+                </button>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Coluna 3: Suporte & Diagnóstico -->
+          <div class="footer-nav-col">
+            <h3 class="footer-col-title">Suporte &amp; Status</h3>
+            <ul class="footer-links-list">
+              <li><a href="#faq-suporte" class="footer-nav-link">Perguntas Frequentes (FAQ)</a></li>
+              <li>
+                <a href="/status" target="_blank" class="footer-nav-link">Status dos Serviços</a>
+              </li>
+              <!-- O Painel de Testes E2E nao entra aqui: /tests.html e restrito a admins e exige
+                   token na querystring, entao o link publico devolvia 403 para todo mundo. O atalho
+                   correto e injetado no menu de perfil so para admins (ver renderUserStatus). -->
+            </ul>
+          </div>
+
+          <!-- Coluna 4: Legal -->
+          <div class="footer-nav-col">
+            <h3 class="footer-col-title">Legal &amp; Compliance</h3>
+            <ul class="footer-links-list">
+              <li>
+                <a href="/terms.html" target="_blank" class="footer-nav-link">Termos de Uso</a>
+              </li>
+              <li>
+                <a href="/terms.html#privacidade" target="_blank" class="footer-nav-link"
+                  >Privacidade (LGPD)</a
+                >
+              </li>
+              <li>
+                <a href="/terms.html#compliance" target="_blank" class="footer-nav-link"
+                  >Zero Cash-Out</a
+                >
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Scripts: Sound Engine, Socket.IO, Motor Gráfico Arcade e Aplicação -->
+    <script src="sound.js?v=f1d504cfb7"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/cyberRoulette.js?v=fc75bf5a73"></script>
+    <script src="js/donationWall.js?v=22b30435bd"></script>
+    <script src="app.js?v=4385fc4470"></script>
+    <!-- Só registra o carregador: Three.js e a simulação são baixados quando a
+         Arena mostra um jogo jogável (ver carregarLiveXJogos em app.js). -->
+    <script type="module" src="games/loader.js?v=96449fc7eb"></script>
+  </body>
+</html>
+

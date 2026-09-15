@@ -1,0 +1,25 @@
+[package]
+name = "livex_sim"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Simulação determinística dos jogos da LiveX. O mesmo .wasm roda no navegador e no verificador do servidor."
+
+[lib]
+# cdylib gera o .wasm; rlib deixa os testes de integração (cargo test) usarem a
+# mesma API em Rust nativo.
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# Trigonometria em Rust puro. A f32::sin da std usa a libm do sistema no build
+# nativo e uma implementação própria no wasm: os testes nativos dariam hashes
+# diferentes do .wasm que vai para produção. Com a crate libm, é o mesmo código
+# nos dois alvos.
+libm = "0.2"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

@@ -1,0 +1,4 @@
+# Saída do build dos jogos: bytes exatos, sem conversão de fim de linha. O hash
+# do .wasm é conferido contra sim-manifest.json e os bundles têm hash no nome.
+frontend/public/games/** -text
+*.wasm binary

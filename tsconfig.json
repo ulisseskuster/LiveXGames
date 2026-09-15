@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "lib": ["ES2022"],
+    // Sem isto o TypeScript nao carrega @types/node e os globais do Node
+    // (process, Buffer, console, crypto) ficam indefinidos nos arquivos que
+    // usam // @ts-check. Localmente passava por acidente; no CI, onde so as
+    // dependencias da raiz sao instaladas, os erros apareciam.
+    "types": ["node"],
+    "allowJs": true,
+    "checkJs": false,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": false
+  },
+  "include": ["backend/src/**/*.js"],
+  "exclude": ["node_modules", "**/node_modules/**", "backend/test/**"]
+}

@@ -1,0 +1,158 @@
+const { Pool } = require('pg');
+require('dotenv').config();
+
+// Sem string de conexão padrão: as credenciais fixas que ficavam aqui faziam o
+// pool tentar um Postgres local a cada boot, poluindo o log com erro de senha e
+// abrindo um caminho de conexão não intencional em qualquer máquina que tivesse
+// um banco local de pé. Sem DATABASE_URL, o modo InMemoryStore assume, que é
+// justamente o comportamento documentado para rodar sem banco.
+const connectionString = process.env.DATABASE_URL || '';
+const isProduction = process.env.NODE_ENV === 'production';
+
+// Detecta se a conexão requer SSL (Supabase, Neon, Railway, Render, ou produção)
+const needsSsl =
+  process.env.NODE_ENV === 'production' ||
+  process.env.DATABASE_SSL === 'true' ||
+  connectionString.includes('supabase') ||
+  connectionString.includes('neon.tech') ||
+  connectionString.includes('railway') ||
+  connectionString.includes('render.com') ||
+  connectionString.includes('sslmode=require');
+
+let isDbConnected = false;
+let lastConnectionError = null;
+
+function isConfigured() {
+  return Boolean(process.env.DATABASE_URL);
+}
+
+// Por padrão, a validação do certificado TLS é relaxada (rejectUnauthorized:false),
+// necessário para alguns poolers gerenciados (ex.: Supabase) cuja cadeia de
+// certificados não é validável pelas CAs padrão do Node.
+//
+// Há duas formas de exigir validação estrita:
+//  - DATABASE_SSL_CA: cole o certificado CA raiz do provedor (PEM). É o caminho
+//    recomendado — valida de verdade contra a CA correta, sem depender de a
+//    cadeia do provedor estar nas CAs públicas do Node.
+//  - DATABASE_SSL_REJECT_UNAUTHORIZED=true: exige validação usando apenas as CAs
+//    padrão do Node. Só funciona se o provedor emitir por uma CA pública.
+const sslCa = (process.env.DATABASE_SSL_CA || '').trim();
+const strictSsl = sslCa.length > 0 || process.env.DATABASE_SSL_REJECT_UNAUTHORIZED === 'true';
+
+if (needsSsl && !strictSsl) {
+  console.warn(
+    '[Database] TLS sem validação de certificado (rejectUnauthorized:false). Para validação estrita, defina DATABASE_SSL_CA com o certificado CA do provedor (recomendado) ou DATABASE_SSL_REJECT_UNAUTHORIZED=true se a CA dele for pública.'
+  );
+}
+
+const sslConfig = needsSsl
+  ? { rejectUnauthorized: strictSsl, ...(sslCa ? { ca: sslCa } : {}) }
+  : false;
+
+const pool = new Pool({
+  ...(connectionString ? { connectionString } : {}),
+  ssl: sslConfig,
+  connectionTimeoutMillis: 10000,
+  idleTimeoutMillis: 10000,
+  max: 10
+});
+
+pool.on('error', (err) => {
+  console.warn('[Database] Aviso de conexão do pool PostgreSQL:', err.message);
+  isDbConnected = false;
+  lastConnectionError = err.message;
+});
+
+async function checkConnection() {
+  if (!connectionString) {
+    isDbConnected = false;
+    lastConnectionError =
+      process.env.NODE_ENV === 'production'
+        ? 'Variável DATABASE_URL ausente nas Environment Variables do serviço.'
+        : 'DATABASE_URL não configurada: rodando com InMemoryStore.';
+    console.log(`[Database] ${lastConnectionError}`);
+    return false;
+  }
+
+  try {
+    const client = await pool.connect();
+    await client.query('SELECT 1');
+    client.release();
+    isDbConnected = true;
+    lastConnectionError = null;
+    console.log('[Database] PostgreSQL conectado com sucesso.');
+
+    // Executa auto-migração assíncrona para garantir tabelas e seeds prontos
+    try {
+      const { runAutoMigration } = require('../db/autoMigrate');
+      const migration = await runAutoMigration(pool);
+      if (!migration.success) {
+        throw new Error(`AutoMigrate falhou: ${migration.error || 'erro desconhecido'}`);
+      }
+    } catch (migErr) {
+      console.warn(
+        '[Database] AutoMigrate falhou, mas a conexão com o banco permanece ativa:',
+        migErr.message
+      );
+    }
+
+    return true;
+  } catch (error) {
+    isDbConnected = false;
+    lastConnectionError = error.message;
+    console.error(
+      `[Database] PostgreSQL indisponível${isProduction ? ' em produção' : ''}:`,
+      error.message
+    );
+    return false;
+  }
+}
+
+// Verifica a conexão na inicialização. A promessa fica guardada porque
+// isAvailable() muda de false para true de forma assíncrona: um teste cuja
+// primeira operação é gravar no banco pode rodar antes desse ping terminar e
+// cair silenciosamente no InMemoryStore, gerando um ID que não existe na tabela
+// real (e uma violação de chave estrangeira mais tarde, quando outra chamada já
+// vê isAvailable()=true e tenta usar esse mesmo ID no Postgres). Quem cria dados
+// como primeira ação de um teste deve `await require('./database').whenReady()`
+// antes.
+const initialConnectionCheck = checkConnection();
+
+/**
+ * Decide o que fazer quando uma query falha, no lugar do catch que engolia o erro.
+ *
+ * O InMemoryStore existe para rodar a plataforma sem banco nenhum (dev, testes
+ * unitários, demonstração local). Quando DATABASE_URL está configurada, o banco é
+ * a única verdade e um erro de query tem de propagar: engoli-lo e escrever na
+ * memória fazia uma instabilidade momentânea do Postgres virar saldo aplicado só
+ * em RAM — a API respondia 200, a UI mostrava o valor novo, e tudo sumia no
+ * próximo restart. Era também o que anulava o índice único de idempotência das
+ * doações: a violação 23505 virava um warn e um "sucesso".
+ *
+ * @param {Error} err Erro vindo do driver do PostgreSQL.
+ * @param {string} contexto Rótulo para o log (ex.: 'WalletModel.addCredits').
+ */
+function fallbackOrThrow(err, contexto) {
+  if (isConfigured() || isProduction) {
+    console.error(`[${contexto}] Erro no PostgreSQL:`, err.message);
+    throw err;
+  }
+  console.warn(`[${contexto}] Sem banco configurado, usando InMemoryStore:`, err.message);
+}
+
+module.exports = {
+  pool,
+  // SQL em texto usa linhas como objetos. Sem o tipo, o driver pode ser inferido
+  // pela sobrecarga rowMode: 'array', incompatível com os models.
+  /** @param {string} text @param {any[]} [params] */
+  query: (text, params) => pool.query(text, params),
+  connect: () => pool.connect(),
+  // Em produção, modelos devem tentar o banco e falhar com 503/500 controlado,
+  // nunca cair silenciosamente em dados voláteis do processo.
+  isAvailable: () => isDbConnected || isProduction,
+  isConnected: () => isDbConnected,
+  isConfigured,
+  checkConnection,
+  fallbackOrThrow,
+  whenReady: () => initialConnectionCheck
+};

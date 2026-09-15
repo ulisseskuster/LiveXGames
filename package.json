@@ -1,0 +1,31 @@
+{
+  "name": "livex-games-tooling",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Ferramentas de lint/formatacao compartilhadas do monorepo (backend + frontend). Build/deploy real continua isolado em backend/package.json.",
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test:e2e": "playwright test",
+    "typecheck": "tsc --noEmit",
+    "icons:build": "node scripts/build-icon-sprite.js",
+    "assets:stamp": "node scripts/stamp-assets.js",
+    "test:unit": "npm --prefix backend test",
+    "games:build": "node scripts/build-games.js",
+    "games:check": "node scripts/check-games-build.js",
+    "games:test": "node scripts/test-games.js"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^22.20.2",
+    "eslint": "^10.10.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.12.0",
+    "lucide-static": "^1.44.0",
+    "prettier": "^3.9.6",
+    "typescript": "^7.0.2"
+  }
+}

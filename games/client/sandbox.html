@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>LiveX · Sandbox da fundação dos jogos</title>
+    <link rel="stylesheet" href="./src/sandbox/sandbox.css" />
+  </head>
+  <body>
+    <main class="sandbox">
+      <header>
+        <h1>Sandbox da fundação</h1>
+        <p>
+          Página interna (não existe em produção). Prova a simulação WASM no navegador, o log de
+          entradas e a verificação por replay no servidor antes dos jogos reais dependerem disso.
+        </p>
+      </header>
+
+      <div class="palco">
+        <canvas id="palco" aria-label="Cena do sandbox"></canvas>
+        <div id="hud" class="hud" hidden></div>
+        <div id="toque" class="toque" hidden>
+          <div data-zona="eixo" aria-label="Arraste para desviar"></div>
+          <div class="botoes">
+            <button type="button" data-botao="TROCAR_ITEM" aria-label="Trocar item">Q</button>
+            <button type="button" data-botao="USAR_ITEM" aria-label="Usar item">E</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="acoes">
+        <button id="jogarServidor" type="button" class="principal" disabled>
+          Jogar valendo (servidor verifica)
+        </button>
+        <button id="jogarLocal" type="button" disabled>Jogar sem servidor</button>
+        <button id="sair" type="button" hidden>Encerrar partida (Esc)</button>
+      </div>
+
+      <pre id="status" aria-live="polite">Carregando…</pre>
+    </main>
+    <script type="module" src="./src/sandbox/main.ts"></script>
+  </body>
+</html>

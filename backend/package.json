@@ -1,0 +1,39 @@
+{
+  "name": "jet-launcher-platform",
+  "version": "1.0.0",
+  "description": "Plataforma web de gamificação para lives com economia virtual, loja, doações LivePix, ranking e jogo de jato server-authoritative.",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "node --test test/*.test.js",
+    "db:migrate": "node ../database/migrate.js",
+    "test:webhooks": "node test/e2e-webhooks.js",
+    "email:test": "node scripts/testar-email.js"
+  },
+  "dependencies": {
+    "@socket.io/postgres-adapter": "^0.5.0",
+    "bcryptjs": "^3.0.0",
+    "compression": "^1.8.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.19.2",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^10.0.8",
+    "pg": "^8.13.0",
+    "socket.io": "^4.8.1",
+    "swagger-ui-dist": "^5.32.15"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14",
+    "socket.io-client": "^4.8.3"
+  },
+  "overrides": {
+    "qs": "^6.16.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

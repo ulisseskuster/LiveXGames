@@ -1,0 +1,1150 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "LiveX Games API",
+    "version": "2.0.0",
+    "description": "API oficial da plataforma LiveX Games para gamificação de transmissões ao vivo com física server-authoritative, economia de Fichas de Apoio descentralizada por streamer, doações Pix via PixGG e LivePix, roleta diária por canal, candidatura de streamer verificado e catálogo de brindes com compliance zero-cashout (Lei nº 14.790/2023)."
+  },
+  "servers": [
+    {
+      "url": "https://livexgames.onrender.com",
+      "description": "Ambiente de Produção"
+    },
+    {
+      "url": "http://localhost:3000",
+      "description": "Ambiente Local de Desenvolvimento"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Health & Status",
+      "description": "Observabilidade e integridade dos serviços"
+    },
+    {
+      "name": "Auth",
+      "description": "Autenticação, registro, perfil e vínculos de streaming (Twitch/Kick)"
+    },
+    {
+      "name": "Streamer Channels",
+      "description": "Diretório público, páginas de canal, roleta diária e Central do Criador"
+    },
+    {
+      "name": "Streamer Applications",
+      "description": "Candidatura para tornar-se streamer verificado"
+    },
+    {
+      "name": "Streamer Rewards & Shop",
+      "description": "Catálogo de brindes, resgates com Fichas de Apoio e gestão de pedidos"
+    },
+    {
+      "name": "Game Engine",
+      "description": "Física server-authoritative e telemetria de voos (Jet Launcher, Neon Drifter, Void Walker)"
+    },
+    {
+      "name": "Shop & Supplies",
+      "description": "Itens utilitários e consumíveis dos jogos"
+    },
+    {
+      "name": "Leaderboard",
+      "description": "Rankings semanais agregados de pontuação e distância"
+    },
+    {
+      "name": "Payments & Donations",
+      "description": "Intenções de doação Pix e simulação autoritativa"
+    },
+    {
+      "name": "Admin",
+      "description": "Moderação de brindes, aprovação de candidaturas e concessão manual de fichas"
+    },
+    {
+      "name": "Webhooks",
+      "description": "Endpoints de postback das APIs oficiais PixGG e LivePix"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": ["Health & Status"],
+        "summary": "Diagnóstico operacional completo",
+        "description": "Retorna o estado de banco de dados (PostgreSQL vs Fallback), persistência, WebSockets, física e gateways de pagamento.",
+        "responses": {
+          "200": {
+            "description": "Status dos serviços",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "ok"
+                    },
+                    "environment": {
+                      "type": "string",
+                      "example": "development"
+                    },
+                    "uptime_seconds": {
+                      "type": "integer",
+                      "example": 120
+                    },
+                    "services": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Autenticação de usuário",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["username", "password"],
+                "properties": {
+                  "username": {
+                    "type": "string",
+                    "example": "testsprite_user"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "TestSprite#2026!"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login efetuado com sucesso. A sessão vai no cookie HttpOnly livex_session; o JWT não aparece no corpo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "user": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credenciais inválidas"
+          }
+        }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Cadastro público de novo espectador",
+        "description": "Registra novo usuário sempre com papel viewer (3 vidas diárias).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["username", "email", "password"],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "Test User"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "example": "(11) 98888-7777"
+                  },
+                  "username": {
+                    "type": "string",
+                    "example": "novo_viewer"
+                  },
+                  "email": {
+                    "type": "string",
+                    "example": "novo@livexgames.dev"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "senha123"
+                  },
+                  "resetIfExists": {
+                    "type": "boolean",
+                    "example": false
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Usuário registrado com sucesso"
+          },
+          "400": {
+            "description": "Dados inválidos ou senha curta"
+          },
+          "409": {
+            "description": "Nome de usuário ou e-mail já cadastrado"
+          }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "tags": ["Auth"],
+        "summary": "Perfil do usuário autenticado",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dados do perfil, vidas e papéis"
+          },
+          "401": {
+            "description": "Não autenticado"
+          }
+        }
+      }
+    },
+    "/api/auth/profile": {
+      "put": {
+        "tags": ["Auth"],
+        "summary": "Atualizar dados de perfil",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "Nome Atualizado"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "example": "(11) 91234-5678"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Perfil atualizado"
+          }
+        }
+      }
+    },
+    "/api/auth/unlink-stream": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Desvincular conta de streaming",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["platform"],
+                "properties": {
+                  "platform": {
+                    "type": "string",
+                    "enum": ["twitch", "kick"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Conta desvinculada"
+          }
+        }
+      }
+    },
+    "/api/streamer/list": {
+      "get": {
+        "tags": ["Streamer Channels"],
+        "summary": "Diretório público de streamers",
+        "description": "Lista todos os canais de streamers ativos na plataforma.",
+        "responses": {
+          "200": {
+            "description": "Lista de streamers"
+          }
+        }
+      }
+    },
+    "/api/streamer/{username}": {
+      "get": {
+        "tags": ["Streamer Channels"],
+        "summary": "Página de canal de um streamer",
+        "description": "Retorna informações do criador, links de Pix, catálogo de brindes e, se autenticado, saldo de Fichas de Apoio do viewer e status da roleta diária.",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "nightpilot"
+            }
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Canal do streamer carregado"
+          },
+          "404": {
+            "description": "Canal não encontrado"
+          }
+        }
+      }
+    },
+    "/api/streamer/{streamerId}/roulette/status": {
+      "get": {
+        "tags": ["Streamer Channels"],
+        "summary": "Status da roleta diária para o canal",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "streamerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "33333333-3333-3333-3333-333333333333"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Indica se pode girar hoje e prêmios possíveis"
+          }
+        }
+      }
+    },
+    "/api/streamer/{streamerId}/roulette/spin": {
+      "post": {
+        "tags": ["Streamer Channels"],
+        "summary": "Girar a roleta diária do streamer",
+        "description": "Permite no máximo 1 giro diário por par (usuário, streamer). Sorteia Fichas de Apoio ou vida extra.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "streamerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "33333333-3333-3333-3333-333333333333"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Prêmio sorteado e creditado"
+          },
+          "400": {
+            "description": "Roleta já girada hoje"
+          }
+        }
+      }
+    },
+    "/api/streamer/dashboard/me": {
+      "get": {
+        "tags": ["Streamer Channels"],
+        "summary": "Painel da Central do Criador",
+        "description": "Disponível para streamers e administradores. Retorna credenciais mascaradas e URLs exclusivas de webhook.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dados do painel do criador"
+          },
+          "403": {
+            "description": "Acesso negado (não é streamer)"
+          }
+        }
+      }
+    },
+    "/api/streamer/dashboard/api-credentials": {
+      "post": {
+        "tags": ["Streamer Channels"],
+        "summary": "Salvar credenciais de API PixGG ou LivePix",
+        "description": "Registra Client ID e Client Secret do criador e tenta configurar o webhook automaticamente no gateway.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["provider", "clientId", "clientSecret"],
+                "properties": {
+                  "provider": {
+                    "type": "string",
+                    "enum": ["pixgg", "livepix"]
+                  },
+                  "clientId": {
+                    "type": "string",
+                    "example": "app_client_123"
+                  },
+                  "clientSecret": {
+                    "type": "string",
+                    "example": "secret_abc_456"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Credenciais salvas com sucesso"
+          }
+        }
+      }
+    },
+    "/api/streamer-applications": {
+      "post": {
+        "tags": ["Streamer Applications"],
+        "summary": "Enviar candidatura para streamer verificado",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["channelPlatform", "channelUrl", "pitch"],
+                "properties": {
+                  "channelPlatform": {
+                    "type": "string",
+                    "enum": ["twitch", "kick", "youtube", "other"]
+                  },
+                  "channelUrl": {
+                    "type": "string",
+                    "example": "https://twitch.tv/meucanal"
+                  },
+                  "pitch": {
+                    "type": "string",
+                    "example": "Faço lives diárias de jogos retro e quero gamificar com o LiveX Games!"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Candidatura enviada com sucesso"
+          },
+          "409": {
+            "description": "Já existe uma candidatura pendente"
+          }
+        }
+      },
+      "get": {
+        "tags": ["Streamer Applications"],
+        "summary": "Consultar status da própria candidatura",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Status da candidatura"
+          }
+        }
+      }
+    },
+    "/api/streamer-shop/catalog": {
+      "get": {
+        "tags": ["Streamer Rewards & Shop"],
+        "summary": "Catálogo público de brindes de streamers",
+        "description": "Exibe apenas brindes que foram devidamente aprovados pela moderação.",
+        "parameters": [
+          {
+            "name": "streamerId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Catálogo de brindes"
+          }
+        }
+      }
+    },
+    "/api/streamer-shop/rewards": {
+      "post": {
+        "tags": ["Streamer Rewards & Shop"],
+        "summary": "Criar novo brinde de canal",
+        "description": "Apenas streamers e admins. O brinde inicia em status pending aguardando moderação.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["title", "delivery_type", "price_coins", "stock"],
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "example": "Caneca Oficial VIP"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "Caneca cerâmica 350ml"
+                  },
+                  "delivery_type": {
+                    "type": "string",
+                    "enum": ["physical", "digital"]
+                  },
+                  "price_coins": {
+                    "type": "integer",
+                    "example": 850
+                  },
+                  "stock": {
+                    "type": "integer",
+                    "example": 10
+                  },
+                  "image_url": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Brinde cadastrado para moderação"
+          }
+        }
+      }
+    },
+    "/api/streamer-shop/redeem": {
+      "post": {
+        "tags": ["Streamer Rewards & Shop"],
+        "summary": "Resgatar brinde usando Fichas de Apoio do streamer",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["rewardId"],
+                "properties": {
+                  "rewardId": {
+                    "type": "string"
+                  },
+                  "recipient_name": {
+                    "type": "string",
+                    "example": "Piloto Destinatário"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "example": "(11) 99999-8888"
+                  },
+                  "shipping_address": {
+                    "type": "string",
+                    "example": "Av. Paulista, 1000, Apto 42, SP"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Brinde resgatado (código digital ou pedido de envio gerado)"
+          },
+          "400": {
+            "description": "Saldo insuficiente de fichas ou estoque esgotado"
+          }
+        }
+      }
+    },
+    "/api/streamer-shop/my-redemptions": {
+      "get": {
+        "tags": ["Streamer Rewards & Shop"],
+        "summary": "Histórico de resgates do espectador",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de brindes resgatados pelo usuário"
+          }
+        }
+      }
+    },
+    "/api/streamer-shop/orders": {
+      "get": {
+        "tags": ["Streamer Rewards & Shop"],
+        "summary": "Pedidos recebidos para entrega (Streamer)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de pedidos de envio"
+          }
+        }
+      }
+    },
+    "/api/streamer-shop/orders/{redemptionId}": {
+      "patch": {
+        "tags": ["Streamer Rewards & Shop"],
+        "summary": "Atualizar envio e código de rastreio",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "redemptionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": ["pending_fulfillment", "shipped", "delivered", "cancelled"]
+                  },
+                  "tracking_code": {
+                    "type": "string",
+                    "example": "BR123456789XX"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Status do pedido atualizado"
+          }
+        }
+      }
+    },
+    "/api/game/runs": {
+      "post": {
+        "tags": ["Game Engine"],
+        "summary": "Abrir rodada (Jet Launcher, Neon Drifter ou Void Walker)",
+        "description": "Consome 1 vida e os itens equipados, sorteia a rodada (semente HMAC) e credita as moedas antes de responder. GET /api/game/runs/{runId}/reveal entrega o filme; POST /api/game/runs/{runId}/finish devolve o recibo salvo.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["gameId"],
+                "properties": {
+                  "gameId": {
+                    "type": "string",
+                    "enum": ["jet_launcher", "neon_drifter", "void_walker"]
+                  },
+                  "itemIds": {
+                    "type": "array",
+                    "maxItems": 3,
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Rodada aberta e liquidada (runId e commitment)"
+          },
+          "403": {
+            "description": "Sem vidas restantes"
+          },
+          "429": {
+            "description": "Muitas rodadas abertas em pouco tempo"
+          }
+        }
+      }
+    },
+    "/api/game/history": {
+      "get": {
+        "tags": ["Game Engine"],
+        "summary": "Histórico de lançamentos do usuário",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lançamentos recentes"
+          }
+        }
+      }
+    },
+    "/api/shop/items": {
+      "get": {
+        "tags": ["Shop & Supplies"],
+        "summary": "Catálogo de itens e melhorias dos jogos",
+        "responses": {
+          "200": {
+            "description": "Lista de itens disponíveis na loja global"
+          }
+        }
+      }
+    },
+    "/api/shop/purchase": {
+      "post": {
+        "tags": ["Shop & Supplies"],
+        "summary": "Comprar item com moedas",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["itemId"],
+                "properties": {
+                  "itemId": {
+                    "type": "string",
+                    "example": "nitro_booster"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Item adquirido e adicionado ao inventário"
+          },
+          "400": {
+            "description": "Saldo insuficiente"
+          }
+        }
+      }
+    },
+    "/api/shop/inventory": {
+      "get": {
+        "tags": ["Shop & Supplies"],
+        "summary": "Inventário de itens do usuário",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Itens adquiridos pelo piloto"
+          }
+        }
+      }
+    },
+    "/api/leaderboard/{periodo}": {
+      "get": {
+        "tags": ["Leaderboard"],
+        "summary": "Ranking de pilotos por jogo e período",
+        "parameters": [
+          {
+            "name": "periodo",
+            "in": "path",
+            "required": true,
+            "description": "weekly = últimos 7 dias, monthly = últimos 30 dias, all = desde o início",
+            "schema": { "type": "string", "enum": ["weekly", "monthly", "all"] }
+          },
+          {
+            "name": "gameId",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["jet_launcher", "neon_drifter", "void_walker"] }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Top pilotos por pontuação e distância"
+          },
+          "400": {
+            "description": "Jogo fora do ranking"
+          },
+          "404": {
+            "description": "Período desconhecido"
+          }
+        }
+      }
+    },
+    "/api/payments/simulate": {
+      "post": {
+        "tags": ["Payments & Donations"],
+        "summary": "Simulação de doação Pix para um streamer",
+        "description": "Credita Fichas de Apoio do streamer na carteira do próprio usuário logado para fins de teste e demonstração.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["amount", "streamerId"],
+                "properties": {
+                  "amount": {
+                    "type": "number",
+                    "example": 10
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Excelente live! #testsprite_user"
+                  },
+                  "streamerId": {
+                    "type": "string",
+                    "example": "33333333-3333-3333-3333-333333333333"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Doação simulada e fichas creditadas"
+          }
+        }
+      }
+    },
+    "/api/admin/rewards/queue": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "Fila de moderação de brindes pendentes",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Brindes aguardando aprovação/rejeição"
+          },
+          "403": {
+            "description": "Apenas administradores"
+          }
+        }
+      }
+    },
+    "/api/admin/rewards/{rewardId}/moderate": {
+      "post": {
+        "tags": ["Admin"],
+        "summary": "Aprovar ou rejeitar brinde de streamer",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "rewardId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["action"],
+                "properties": {
+                  "action": {
+                    "type": "string",
+                    "enum": ["approve", "reject"]
+                  },
+                  "review_notes": {
+                    "type": "string",
+                    "example": "Aprovado em conformidade com as diretrizes."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Brinde moderado"
+          }
+        }
+      }
+    },
+    "/api/admin/streamer-applications/queue": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "Fila de candidaturas para virar streamer",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Candidaturas pendentes"
+          }
+        }
+      }
+    },
+    "/api/admin/streamer-applications/{applicationId}/moderate": {
+      "post": {
+        "tags": ["Admin"],
+        "summary": "Aprovar ou rejeitar candidatura de streamer",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "applicationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["action"],
+                "properties": {
+                  "action": {
+                    "type": "string",
+                    "enum": ["approve", "reject"]
+                  },
+                  "review_notes": {
+                    "type": "string",
+                    "example": "Canal verificado com sucesso."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Candidatura moderada e perfil promovido se aprovada"
+          }
+        }
+      }
+    },
+    "/api/admin/streamer-wallets/grant": {
+      "post": {
+        "tags": ["Admin"],
+        "summary": "Concessão manual de Fichas de Apoio de teste",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["userId", "streamerId", "amount"],
+                "properties": {
+                  "userId": {
+                    "type": "string"
+                  },
+                  "streamerId": {
+                    "type": "string"
+                  },
+                  "amount": {
+                    "type": "integer",
+                    "example": 500
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Fichas concedidas"
+          }
+        }
+      }
+    },
+    "/webhooks/livepix/{streamerId}": {
+      "post": {
+        "tags": ["Webhooks"],
+        "summary": "Webhook oficial LivePix para um streamer",
+        "description": "Exige cabeçalho x-livepix-signature-256 com assinatura HMAC SHA-256 do corpo bruto.",
+        "parameters": [
+          {
+            "name": "streamerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Webhook processado"
+          },
+          "401": {
+            "description": "Assinatura inválida"
+          }
+        }
+      }
+    },
+    "/webhooks/pixgg/{streamerId}": {
+      "post": {
+        "tags": ["Webhooks"],
+        "summary": "Webhook oficial PixGG para um streamer",
+        "description": "Exige cabeçalho x-pixgg-signature-256 com assinatura HMAC SHA-256.",
+        "parameters": [
+          {
+            "name": "streamerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Webhook processado"
+          },
+          "401": {
+            "description": "Assinatura inválida"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Token JWT fornecido no header: Authorization: Bearer <token>"
+      }
+    }
+  }
+}
