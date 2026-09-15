@@ -243,6 +243,11 @@ CREATE TABLE IF NOT EXISTS streamer_roulette_spins (
 );
 CREATE INDEX IF NOT EXISTS idx_roulette_spins_user_streamer ON streamer_roulette_spins(user_id, streamer_id);
 
+-- Revogação de sessão (P1 do ESCALA.md): incrementar token_version invalida
+-- todos os JWTs emitidos antes (logout, troca de senha). Coluna default 0 para
+-- usuários existentes continuarem com tokens válidos até o próximo login.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS token_version INT NOT NULL DEFAULT 0;
+
 -- ---------------------------------------------------------------------------
 -- Ajustes idempotentes para bancos criados antes destas colunas/constraints.
 -- Ficam aqui (e não em database/migrations) porque o schema.sql roda ANTES das

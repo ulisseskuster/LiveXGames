@@ -82,6 +82,31 @@ class UserModel {
     );
   }
 
+  /** Revoga todos os tokens ativos do usuário. Chamado no logout e na troca de
+   *  senha: incrementa token_version, e qualquer JWT com versão anterior passa
+   *  a ser rejeitado pelo requireAuth (P1 do ESCALA.md). */
+  static async incrementarTokenVersion(userId) {
+    if (!userId) return false;
+    if (db.isAvailable()) {
+      try {
+        const { rows } = await db.query(
+          'UPDATE users SET token_version = token_version + 1 WHERE id = $1 RETURNING token_version',
+          [userId]
+        );
+        return rows[0] ? Number(rows[0].token_version) : false;
+      } catch (err) {
+        db.fallbackOrThrow(err, 'UserModel.incrementarTokenVersion');
+      }
+    }
+    const u = InMemoryStore.users.find((x) => x.id === userId);
+    if (u) {
+      u.token_version = Number(u.token_version || 0) + 1;
+      u.tokenVersion = u.token_version;
+      return u.token_version;
+    }
+    return false;
+  }
+
   static async findById(id) {
     if (!id) return null;
 
@@ -91,7 +116,7 @@ class UserModel {
           SELECT id, name, phone, username, email, password_hash, role, lives, max_lives,
                  twitch_id, twitch_username, kick_id, kick_username, is_sub_twitch, is_sub_kick,
                  last_life_refill, sub_lives_used, sub_lives_day, livepix_url, pixgg_url, created_at,
-                 birth_date, terms_accepted_at, terms_version, email_verified_at
+                 birth_date, terms_accepted_at, terms_version, email_verified_at, token_version
           FROM users
           WHERE id = $1
         `;
@@ -122,7 +147,8 @@ class UserModel {
             birth_date: rows[0].birth_date || null,
             terms_accepted_at: rows[0].terms_accepted_at || null,
             terms_version: rows[0].terms_version || null,
-            email_verified_at: rows[0].email_verified_at || null
+            email_verified_at: rows[0].email_verified_at || null,
+            tokenVersion: Number(rows[0].token_version || 0)
           };
           const refreshed = this.checkAndRefillLives(user);
           this.persistLifeRefill(id, rows[0].lives, refreshed);
@@ -135,6 +161,11 @@ class UserModel {
     }
 
     const user = InMemoryStore.users.find((u) => u.id === id) || null;
+    // Garante o formato esperado pelo requireAuth (tokenVersion) no caminho
+    // InMemory, onde o objeto cru do store é devolvido.
+    if (user && user.tokenVersion === undefined) {
+      user.tokenVersion = Number(user.token_version || 0);
+    }
     return this.checkAndRefillLives(user);
   }
 
@@ -148,7 +179,7 @@ class UserModel {
           SELECT id, name, phone, username, email, password_hash, role, lives, max_lives,
                  twitch_id, twitch_username, kick_id, kick_username, is_sub_twitch, is_sub_kick,
                  last_life_refill, sub_lives_used, sub_lives_day, livepix_url, pixgg_url, created_at,
-                 birth_date, terms_accepted_at, terms_version, email_verified_at
+                 birth_date, terms_accepted_at, terms_version, email_verified_at, token_version
           FROM users
           WHERE LOWER(username) = LOWER($1)
         `;
@@ -179,7 +210,8 @@ class UserModel {
             birth_date: rows[0].birth_date || null,
             terms_accepted_at: rows[0].terms_accepted_at || null,
             terms_version: rows[0].terms_version || null,
-            email_verified_at: rows[0].email_verified_at || null
+            email_verified_at: rows[0].email_verified_at || null,
+            tokenVersion: Number(rows[0].token_version || 0)
           };
           return this.checkAndRefillLives(user);
         }
@@ -213,7 +245,7 @@ class UserModel {
           SELECT id, name, phone, username, email, password_hash, role, lives, max_lives,
                  twitch_id, twitch_username, kick_id, kick_username, is_sub_twitch, is_sub_kick,
                  last_life_refill, sub_lives_used, sub_lives_day, livepix_url, pixgg_url, created_at,
-                 birth_date, terms_accepted_at, terms_version, email_verified_at
+                 birth_date, terms_accepted_at, terms_version, email_verified_at, token_version
           FROM users
           WHERE LOWER(username) = ANY($1::text[])
         `;
@@ -266,7 +298,7 @@ class UserModel {
           SELECT id, name, phone, username, email, password_hash, role, lives, max_lives,
                  twitch_id, twitch_username, kick_id, kick_username, is_sub_twitch, is_sub_kick,
                  last_life_refill, sub_lives_used, sub_lives_day, livepix_url, pixgg_url, created_at,
-                 birth_date, terms_accepted_at, terms_version, email_verified_at
+                 birth_date, terms_accepted_at, terms_version, email_verified_at, token_version
           FROM users
           WHERE LOWER(email) = LOWER($1)
         `;
@@ -297,7 +329,8 @@ class UserModel {
             birth_date: rows[0].birth_date || null,
             terms_accepted_at: rows[0].terms_accepted_at || null,
             terms_version: rows[0].terms_version || null,
-            email_verified_at: rows[0].email_verified_at || null
+            email_verified_at: rows[0].email_verified_at || null,
+            tokenVersion: Number(rows[0].token_version || 0)
           };
         }
         return null;
@@ -322,7 +355,7 @@ class UserModel {
           SELECT id, name, phone, username, email, password_hash, role, lives, max_lives,
                  twitch_id, twitch_username, kick_id, kick_username, is_sub_twitch, is_sub_kick,
                  last_life_refill, sub_lives_used, sub_lives_day, livepix_url, pixgg_url, created_at,
-                 birth_date, terms_accepted_at, terms_version, email_verified_at
+                 birth_date, terms_accepted_at, terms_version, email_verified_at, token_version
           FROM users
           WHERE kick_id = $1
         `;
@@ -353,7 +386,8 @@ class UserModel {
             birth_date: rows[0].birth_date || null,
             terms_accepted_at: rows[0].terms_accepted_at || null,
             terms_version: rows[0].terms_version || null,
-            email_verified_at: rows[0].email_verified_at || null
+            email_verified_at: rows[0].email_verified_at || null,
+            tokenVersion: Number(rows[0].token_version || 0)
           };
           return this.checkAndRefillLives(user);
         }
@@ -462,7 +496,7 @@ class UserModel {
         const query = `
           INSERT INTO users (id, name, phone, username, email, password_hash, role, lives, max_lives, last_life_refill, created_at, birth_date, terms_accepted_at, terms_version)
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), $13)
-          RETURNING id, name, phone, username, email, role, lives, max_lives, twitch_id, twitch_username, kick_id, kick_username, is_sub_twitch, is_sub_kick, created_at, birth_date, terms_accepted_at, terms_version, email_verified_at
+          RETURNING id, name, phone, username, email, role, lives, max_lives, twitch_id, twitch_username, kick_id, kick_username, is_sub_twitch, is_sub_kick, created_at, birth_date, terms_accepted_at, terms_version, email_verified_at, token_version
         `;
         const { rows } = await db.query(query, [
           id,
@@ -529,7 +563,9 @@ class UserModel {
       birth_date: birthDate,
       terms_accepted_at: now,
       terms_version: termsVersion,
-      email_verified_at: null
+      email_verified_at: null,
+      token_version: 0,
+      tokenVersion: 0
     };
 
     InMemoryStore.users.push(newUser);
@@ -560,7 +596,9 @@ class UserModel {
       birth_date: newUser.birth_date,
       terms_accepted_at: newUser.terms_accepted_at,
       terms_version: newUser.terms_version,
-      email_verified_at: null
+      email_verified_at: null,
+      tokenVersion: 0,
+      token_version: 0
     };
   }
 
@@ -770,7 +808,7 @@ class UserModel {
           SELECT id, name, phone, username, email, password_hash, role, lives, max_lives,
                  twitch_id, twitch_username, kick_id, kick_username, is_sub_twitch, is_sub_kick,
                  last_life_refill, sub_lives_used, sub_lives_day, livepix_url, pixgg_url, created_at,
-                 birth_date, terms_accepted_at, terms_version, email_verified_at
+                 birth_date, terms_accepted_at, terms_version, email_verified_at, token_version
           FROM users
           WHERE regexp_replace(phone, '\\D', '', 'g') = $1
         `;

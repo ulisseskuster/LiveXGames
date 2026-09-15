@@ -64,7 +64,10 @@ class AuthService {
       {
         sub: user.id,
         username: user.username,
-        role: user.role
+        role: user.role,
+        // Versão da sessão: incrementada no logout/troca de senha para revogar
+        // tokens antigos imediatamente (P1 do ESCALA.md — requireAuth confere).
+        tv: Number(user.tokenVersion || 0)
       },
       JWT_SECRET,
       { expiresIn: '24h' }
@@ -312,6 +315,10 @@ class AuthService {
 
     const trocada = await UserModel.updatePassword(consumido.userId, novaSenha);
     if (!trocada) throw new Error('USER_NOT_FOUND');
+
+    // Troca de senha revoga todas as sessões anteriores: quem estava logado com
+    // um token emitido antes da troca perde o acesso (P1 do ESCALA.md).
+    await UserModel.incrementarTokenVersion(consumido.userId).catch(() => {});
 
     return { success: true };
   }

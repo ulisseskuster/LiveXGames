@@ -69,11 +69,23 @@ class AuthController {
   }
 
   /**
-   * Encerra a sessão apagando o cookie. Precisa existir no servidor: o cookie é
-   * HttpOnly, então o cliente não consegue removê-lo sozinho — sem esta rota ele
-   * sobreviveria ao "Sair" e continuaria dando acesso a /tests.html por 24h.
+   * Encerra a sessão apagando o cookie E revogando o token atual. O cookie é
+   * HttpOnly, então o cliente não consegue removê-lo sozinho; e sem revogação,
+   * um token copiado (log, extensão) seguiria vivo por 24h. Incrementar
+   * token_version invalida todos os JWTs emitidos antes (P1 do ESCALA.md).
    */
-  static logout(req, res) {
+  static async logout(req, res) {
+    try {
+      // req.user só é preenchido pelo requireAuth; logout é rota aberta (apaga o
+      // cookie de qualquer forma), então a revogação é best-effort.
+      const userId = (req.user && req.user.id) || usuarioDoFluxoOAuth(req);
+      if (userId) {
+        const UserModel = require('../models/userModel');
+        await UserModel.incrementarTokenVersion(userId).catch(() => {});
+      }
+    } catch (e) {
+      // Revogar é best-effort: o cookie é sempre apagado.
+    }
     res.clearCookie(SESSION_COOKIE, { ...sessionCookieOptions(), maxAge: undefined });
     return ok(res, null, 'Sessão encerrada');
   }

@@ -2,6 +2,7 @@
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET } = require('../config/secrets');
+const UserModel = require('../models/userModel');
 const StreamerPaymentConfigModel = require('../models/streamerPaymentConfigModel');
 const { SESSION_COOKIE } = require('../config/session');
 
@@ -30,20 +31,42 @@ function requireAuth(req, res, next) {
     });
   }
 
+  let decoded;
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = {
-      id: decoded.sub,
-      username: decoded.username,
-      role: decoded.role
-    };
-    return next();
+    decoded = jwt.verify(token, JWT_SECRET);
   } catch (error) {
     return res.status(401).json({
       success: false,
       message: 'Token inválido ou expirado'
     });
   }
+
+  // Revogação de sessão (P1 do ESCALA.md): o token carrega a versão da sessão
+  // ('tv'). Se o usuário fez logout/trocou a senha, a versão no banco avançou e
+  // este token é rejeitado — mesmo sem expirar. Sem consultar o banco a cada
+  // request, o logout não revogaria nada (P1 de operação do ESCALA.md).
+  return UserModel.findById(decoded.sub)
+    .then((user) => {
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          message: 'Usuário não encontrado'
+        });
+      }
+      if (Number(decoded.tv || 0) !== Number(user.tokenVersion || 0)) {
+        return res.status(401).json({
+          success: false,
+          message: 'Sessão revogada. Faça login novamente.'
+        });
+      }
+      req.user = {
+        id: decoded.sub,
+        username: decoded.username,
+        role: decoded.role
+      };
+      return next();
+    })
+    .catch((err) => next(err));
 }
 
 function requireRole(allowedRoles = []) {
