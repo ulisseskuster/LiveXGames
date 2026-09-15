@@ -369,6 +369,24 @@ class GameRunService {
           const novas = await AchievementService.checkAndUnlock(userId);
           if (novas.length && io) {
             io.to(`user_${userId}`).emit('achievements:unlocked', { novas });
+            // Web Push (PWA) quando configurado: a notificação é gravada na fila
+            // de qualquer forma e o envio real é best-effort (nunca derruba).
+            try {
+              const PushNotificationService = require('./pushNotificationService');
+              await PushNotificationService.sendToUser({
+                userId,
+                title: '🏆 Nova conquista!',
+                body: `Você desbloqueou ${novas.length} ${novas.length === 1 ? 'conquista' : 'conquistas'} na Arena.`,
+                url: '/perfil',
+                relatedType: 'achievement',
+                relatedId: novas.join(',')
+              });
+            } catch (pushErr) {
+              console.warn(
+                `[Achievements] Falha ao enviar push de conquista a ${userId}:`,
+                pushErr.message
+              );
+            }
           }
         }
       } catch (e) {
