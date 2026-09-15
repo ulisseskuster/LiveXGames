@@ -7,6 +7,14 @@ const AuthService = require('../src/services/authService');
 
 const unico = () => Date.now().toString().slice(-8) + Math.floor(Math.random() * 999);
 
+// Se DATABASE_URL está definida, o pool conecta de forma assíncrona: quem cria
+// dados como primeira ação do teste pode rodar antes do ping inicial terminar e
+// cair silenciosamente no InMemoryStore, gerando um id que não existe na tabela
+// real — o findById seguinte (agora com o banco disponível) devolve null e o
+// /me responde 404. Aguardar o pool garante que create/findById usem o MESMO
+// store (ver config/database.js).
+const dbReady = require('../src/config/database').whenReady();
+
 async function subirServidor() {
   const servidor = app.listen(0);
   await new Promise((resolve) => servidor.once('listening', resolve));
@@ -15,6 +23,7 @@ async function subirServidor() {
 }
 
 async function criarUsuarioComToken() {
+  await dbReady;
   const id = unico();
   const user = await UserModel.create({
     username: `rev_${id}`,

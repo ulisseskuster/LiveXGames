@@ -156,6 +156,15 @@ class UserModel {
         }
         return null;
       } catch (err) {
+        // Diagnóstico CI: quando o banco está configurado mas a consulta falha,
+        // o fallbackOrThrow lança (correto), mas se a tabela ainda não existe
+        // (autoMigrate em outro worker), o erro real fica oculto no 404 do
+        // getProfile. Loga para o log do CI revelar a causa.
+        if (db.isConfigured()) {
+          console.warn(
+            `[UserModel.findById] Erro ao consultar id=${id} no PostgreSQL: ${err.message}`
+          );
+        }
         db.fallbackOrThrow(err, 'UserModel.findById');
       }
     }

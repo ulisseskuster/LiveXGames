@@ -7,6 +7,11 @@ const AuthService = require('../src/services/authService');
 const NIGHTPILOT_ID = '33333333-3333-3333-3333-333333333333';
 const unico = () => Date.now().toString().slice(-8) + Math.floor(Math.random() * 999);
 
+// Mesma proteção do sessionRevocation: com DATABASE_URL, o pool conecta de
+// forma assíncrona e o create podia cair no InMemoryStore antes do ping inicial
+// terminar, deixando um id que o findById (com o banco já disponível) não acha.
+const dbReady = require('../src/config/database').whenReady();
+
 // O Centro de Simulação & Testes credita moedas pela rota /api/payments/simulate.
 // Como é uma fonte de moeda, ela vale como fronteira de confiança: esconder o
 // painel no frontend não impede um POST direto. A checagem anterior valia só
@@ -20,6 +25,7 @@ async function subirServidor() {
 }
 
 async function tokenPara(role) {
+  await dbReady;
   const id = unico();
   const user = await UserModel.create({
     username: `sim_${role}_${id}`,
