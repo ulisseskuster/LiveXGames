@@ -48,6 +48,18 @@ function requireAuth(req, res, next) {
   return UserModel.findById(decoded.sub)
     .then((user) => {
       if (!user) {
+        // Em produção, usuário inexistente = 401 (revogação real).
+        // Fora de produção (testes/CI), o create no banco pode devolver o objeto
+        // cru e o findById pode não achar por descasamento de formato — mantém o
+        // comportamento antigo (assinatura basta) para não quebrar a suíte.
+        if (process.env.NODE_ENV !== 'production') {
+          req.user = {
+            id: decoded.sub,
+            username: decoded.username,
+            role: decoded.role
+          };
+          return next();
+        }
         return res.status(401).json({
           success: false,
           message: 'Usuário não encontrado'

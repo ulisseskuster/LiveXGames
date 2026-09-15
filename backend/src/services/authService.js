@@ -60,6 +60,12 @@ function isAllowlistedAdmin(username) {
 
 class AuthService {
   static generateToken(user) {
+    // O `create` no banco devolve a linha crua (token_version snake_case);
+    // o findById devolve o objeto normalizado (tokenVersion camelCase).
+    // Aceita os dois formatos para nunca emitir tv:0 por engano.
+    const tv = Number(
+      user && user.tokenVersion !== undefined ? user.tokenVersion : user && user.token_version
+    );
     return jwt.sign(
       {
         sub: user.id,
@@ -67,7 +73,7 @@ class AuthService {
         role: user.role,
         // Versão da sessão: incrementada no logout/troca de senha para revogar
         // tokens antigos imediatamente (P1 do ESCALA.md — requireAuth confere).
-        tv: Number(user.tokenVersion || 0)
+        tv: Number.isFinite(tv) ? tv : 0
       },
       JWT_SECRET,
       { expiresIn: '24h' }
