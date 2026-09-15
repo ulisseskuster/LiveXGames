@@ -1,0 +1,188 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend-test:
+    name: Backend tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgrespassword
+          POSTGRES_DB: stream_gamification_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Run backend test suite
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql://postgres:postgrespassword@localhost:5432/stream_gamification_test
+        run: npm test
+
+      # Economia por canal no Postgres real: migrações 022/023, compras e resgates
+      # concorrentes, rollback e o reset único. Banco próprio, exigido pelo script.
+      - name: Channel economy on real PostgreSQL
+        working-directory: backend
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:postgrespassword@localhost:5432/livex_channel_test
+        run: |
+          node -e "const { Client } = require('pg'); const c = new Client({ connectionString: 'postgresql://postgres:postgrespassword@localhost:5432/postgres' }); c.connect().then(() => c.query('CREATE DATABASE livex_channel_test')).then(() => c.end()).catch((e) => { console.error(e); process.exit(1); });"
+          node test/channelPostgres.integration.js
+
+      - name: Audit backend dependencies
+        working-directory: backend
+        run: npm audit --omit=dev --audit-level=moderate
+
+  lint:
+    name: Lint (ESLint + Prettier)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
+
+      - name: Install tooling dependencies
+        run: npm ci
+
+      # O typecheck cobre backend/src, que importa bcryptjs, jsonwebtoken, pg e
+      # express. Sem as dependencias do backend instaladas, o TypeScript nao
+      # resolve esses modulos e o job falhava com TS2307 — mesmo passando na
+      # maquina do desenvolvedor, onde backend/node_modules ja existe.
+      - name: Install backend dependencies (necessárias para o type-check)
+        working-directory: backend
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Type-check (TypeScript incremental via // @ts-check)
+        run: npm run typecheck
+
+      - name: Check formatting (backend + frontend + tooling)
+        run: npx prettier --check "backend/**/*.js" "database/**/*.js" "frontend/public/**/*.js" "e2e/**/*.js" "scripts/**/*.js" "*.js" "*.json"
+
+  # Simulação dos jogos (Rust → WASM) e cliente (TS + Three.js). A saída do build
+  # é commitada em frontend/public/games porque o Render não tem Rust; este job
+  # garante que ela corresponde às fontes (README.md, Build dos jogos).
+  games:
+    name: Jogos (simulação WASM + cliente)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: games/client/package-lock.json
+
+      # rustup lê games/sim/rust-toolchain.toml: versão e alvo wasm32 fixados.
+      - name: Install Rust toolchain
+        working-directory: games/sim
+        run: rustup toolchain install
+
+      - name: Install client dependencies
+        run: npm ci --prefix games/client
+
+      - name: Simulation formatting (rustfmt)
+        working-directory: games/sim
+        run: cargo fmt --check
+
+      - name: Simulation tests (cargo)
+        working-directory: games/sim
+        run: cargo test --release
+
+      - name: Client type-check
+        run: npm --prefix games/client run typecheck
+
+      - name: Compile simulation from source
+        working-directory: games/sim
+        run: cargo build --release --target wasm32-unknown-unknown
+
+      # Bytes do .wasm variam entre máquinas (caminhos embutidos); o comportamento
+      # não pode variar. Joga as mesmas partidas no publicado e no recém-compilado.
+      - name: Published build matches sources
+        run: node scripts/check-games-build.js --wasm-novo games/sim/target/wasm32-unknown-unknown/release/livex_sim.wasm
+
+  e2e:
+    name: E2E smoke tests (Playwright)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgrespassword
+          POSTGRES_DB: stream_gamification_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
+
+      - name: Install tooling dependencies
+        run: npm ci
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      # ubuntu-latest ja vem com o Google Chrome instalado; usamos
+      # channel:'chrome' no playwright.config.js para nao depender do
+      # download dos browsers do Playwright.
+      - name: Run Playwright e2e smoke tests
+        env:
+          DATABASE_URL: postgresql://postgres:postgrespassword@localhost:5432/stream_gamification_test
+        run: npm run test:e2e
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
