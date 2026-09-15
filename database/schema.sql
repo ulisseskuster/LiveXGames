@@ -260,3 +260,10 @@ ALTER TABLE shop_items ADD CONSTRAINT shop_items_type_check
 -- e o frontend perdia o filtro de itens por jogo.
 ALTER TABLE shop_items ADD COLUMN IF NOT EXISTS game_id VARCHAR(40) NOT NULL DEFAULT 'all';
 
+-- Idempotência da abertura de rodadas (Fase 2, P0-B, migration 028).
+-- A coluna e o índice ficam aqui para que o schema.sql do CI e do autoMigrate
+-- já os tenham; bancos antigos recebem via migration 028.
+ALTER TABLE public.game_runs ADD COLUMN IF NOT EXISTS idempotency_key TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_game_runs_idempotency_key
+  ON public.game_runs(idempotency_key) WHERE idempotency_key IS NOT NULL;
+
