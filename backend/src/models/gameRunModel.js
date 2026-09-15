@@ -85,6 +85,12 @@ class GameRunModel {
       const client = await db.connect();
       try {
         await client.query('BEGIN');
+        // Serializa liquidações do MESMO usuário: duas rodadas simultâneas (teste
+        // de concorrência) chegariam aqui em transações paralelas e travariam as
+        // mesmas linhas (users → wallets → game_runs) em ordens diferentes →
+        // deadlock 40P01 no Postgres. O advisory lock transacional por usuário
+        // faz a segunda esperar a primeira, com locks sempre na mesma ordem.
+        await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [userId]);
         const { rows } = await client.query(
           'SELECT * FROM game_runs WHERE id = $1 AND user_id = $2 FOR UPDATE',
           [runId, userId]
