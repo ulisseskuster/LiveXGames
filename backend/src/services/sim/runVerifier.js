@@ -15,6 +15,10 @@ const { Worker } = require('worker_threads');
 const TAMANHO_POOL = Math.max(1, Number(process.env.SIM_VERIFIER_WORKERS) || 1);
 const TEMPO_MAXIMO_MS = 10_000;
 const WORKER_PATH = path.join(__dirname, 'runVerifierWorker.js');
+function maxFila() {
+  const v = Number(process.env.SIM_VERIFIER_MAX_QUEUE);
+  return Number.isFinite(v) && v > 0 ? Math.floor(v) : 32;
+}
 
 /**
  * @typedef {{job: object, resolve: (v: any) => void, reject: (e: Error) => void}} Tarefa
@@ -93,6 +97,10 @@ function despachar() {
  */
 function verificar(job) {
   return new Promise((resolve, reject) => {
+    if (fila.length >= maxFila()) {
+      reject(new Error('VERIFIER_QUEUE_FULL'));
+      return;
+    }
     fila.push({ job, resolve, reject });
     despachar();
   });
@@ -106,6 +114,10 @@ function verificar(job) {
  */
 function gerar(job) {
   return new Promise((resolve, reject) => {
+    if (fila.length >= maxFila()) {
+      reject(new Error('VERIFIER_QUEUE_FULL'));
+      return;
+    }
     fila.push({ job: { ...job, operacao: 'gerar' }, resolve, reject });
     despachar();
   });

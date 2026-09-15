@@ -1,8 +1,32 @@
 const GameModel = require('../models/gameModel');
 
+/**
+ * Cache curto por TTL do ranking. A agregação (GROUP BY sobre flight_runs) roda
+ * a cada 5s no máximo por chave, em vez de a cada request — no pico de reload
+ * (ESCALA.md estima ~300 req/s com 1.500 clientes) isso tira a consulta do
+ * caminho quente. `invalidar()` é chamado quando um voo é liquidado, então o
+ * ranking nunca fica mais velho que alguns segundos após a última partida.
+ */
+/** @type {Map<string, {em: number, dados: any[]}>} */
+const cache = new Map();
+
+function ttlMs() {
+  const v = Number(process.env.LEADERBOARD_TTL_MS);
+  return Number.isFinite(v) && v > 0 ? Math.floor(v) : 5000;
+}
+
+function chave(limit, gameId, periodo) {
+  return `${limit}|${gameId || ''}|${periodo}`;
+}
+
 class LeaderboardService {
   /** Janelas móveis em dias, as mesmas do mural de doações (DonationModel.WALL_PERIODS). */
   static PERIODOS = { weekly: 7, monthly: 30, all: null };
+
+  /** Um voo novo saiu: o ranking que pode incluí-lo precisa ser recalculado. */
+  static invalidar() {
+    cache.clear();
+  }
 
   /**
    * @param {string} [gameId] sem ele, soma os três jogos
@@ -10,6 +34,10 @@ class LeaderboardService {
    */
   static async getLeaderboard(limit = 10, gameId, periodo = 'weekly') {
     const numLimit = Math.min(50, Math.max(1, parseInt(limit, 10) || 10));
+    const k = chave(numLimit, gameId, periodo);
+    const agora = Date.now();
+    const hit = cache.get(k);
+    if (hit && agora - hit.em < ttlMs()) return hit.dados;
     const rows = await GameModel.getLeaderboard(
       numLimit,
       gameId || null,
@@ -20,13 +48,15 @@ class LeaderboardService {
     // username/role/best_score/max_distance/total_flights — ver renderLeaderboard
     // em app.js). user_id (identificador persistente) e last_flight (timestamp de
     // atividade) não são usados pela UI e não precisam ser públicos.
-    return rows.map((row) => ({
+    const dados = rows.map((row) => ({
       username: row.username,
       role: row.role,
       best_score: Number(row.best_score),
       max_distance: Number(row.max_distance),
       total_flights: Number(row.total_flights)
     }));
+    cache.set(k, { em: agora, dados });
+    return dados;
   }
 
   /**

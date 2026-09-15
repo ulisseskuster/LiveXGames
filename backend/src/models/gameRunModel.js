@@ -40,6 +40,22 @@ function naMemoria(runId, userId) {
   return InMemoryStore.gameRuns.find((r) => r.id === runId && (!userId || r.user_id === userId));
 }
 
+/**
+ * Idempotência real: se a MESMA chave já foi gravada, devolve a intenção
+ * existente em vez de criar uma nova. O INSERT com ON CONFLICT já cobre a
+ * corrida, mas sem esta checagem o retorno de uma repetição seria null e o
+ * fluxo trataria como 'RUN_ALREADY_OPEN' (só quando em memória; no Postgres
+ * este caminho é redundante, o ON CONFLICT acerta a corrida).
+ */
+async function buscarPorChaveIdempotencia(client, idempotencyKey) {
+  if (!idempotencyKey) return null;
+  const { rows } = await client.query(
+    `SELECT * FROM game_runs WHERE idempotency_key = $1 AND status = 'reserving' LIMIT 1`,
+    [idempotencyKey]
+  );
+  return rows[0] ? normalizar(rows[0]) : null;
+}
+
 class GameRunModel {
   static async geradasPendentes(userId) {
     if (db.isAvailable()) {
@@ -300,11 +316,13 @@ class GameRunModel {
     expiresAt,
     streamerId = null,
     usedChannelLife = false,
+    usedSubLife = false,
     idempotencyKey,
     itemIds = []
   }) {
     const id = randomUUID();
-    const usedSubLife = false;
+    const idempotenciaJaConhecida = await buscarPorChaveIdempotencia(client, idempotencyKey);
+    if (idempotenciaJaConhecida) return idempotenciaJaConhecida;
     const loadoutComItens = {
       ...loadout,
       itemIds

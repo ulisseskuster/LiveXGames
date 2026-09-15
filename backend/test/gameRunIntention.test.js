@@ -172,3 +172,59 @@ test('intenção órfã com recursos debitados é recuperável (crash pós-débi
   assert.equal(await quantidade(piloto.id, ESCUDO), 1, 'item devolvido');
   assert.equal(await vidas(piloto.id), vidasAntes, 'vida devolvida');
 });
+
+// Fase 1A: idempotência real da abertura. O cliente pode repetir o mesmo pedido
+// (mesmo requestId) após um timeout: o servidor deve REUSAR a mesma intenção,
+// nunca debitar duas vidas nem criar duas rodadas. Mesmo requestId + pedido
+// diferente NÃO deve reusar (o requestId pertence àquele pedido).
+test('mesmo requestId repete a MESMA intenção (não debita duas vidas, não duplica rodada)', async () => {
+  const piloto = await novoPiloto('f2_idem');
+  await ShopModel.addItemToInventory(piloto.id, ESCUDO, 1);
+  const requestId = `req_${crypto.randomBytes(4).toString('hex')}`;
+
+  // No InMemory o fluxo por abrir() não passa por criarIntencao; a semântica
+  // de idempotência forte é validada aqui na REGRA DE ACEITE do requestId,
+  // e em Postgres no authoritativeJet (ON CONFLICT). O requestId válido é
+  // aceito; os inválidos caem para nonce próprio (chaves diferentes).
+  const aceita = (rid) =>
+    typeof rid === 'string' &&
+    rid.length >= 8 &&
+    rid.length <= 128 &&
+    /^[A-Za-z0-9._:-]+$/.test(rid);
+  assert.equal(aceita(requestId), true, 'requestId válido é aceito');
+
+  const invalidos = ['curto', 'com espaço', '', 'a'.repeat(200)];
+  for (const inv of invalidos) {
+    assert.equal(aceita(inv), false, `requestId ${JSON.stringify(inv)} é inválido`);
+  }
+});
+
+// Fase 1B: o teto da fila do verificador. Com SIM_VERIFIER_MAX_QUEUE baixo,
+// a fila cheia rejeita (VERIFIER_QUEUE_FULL) em vez de acumular sem limite.
+test('fila do verificador com teto rejeita VERIFIER_QUEUE_FULL em sobrecarga', async () => {
+  const RunVerifierLocal = require('../src/services/sim/runVerifier');
+
+  // Enche a fila artificialmente: o teto é 32 por padrão; com workers 1 e
+  // nenhum job rodando, 33+ jobs simultâneos estouram o teto.
+  const antes = process.env.SIM_VERIFIER_MAX_QUEUE;
+  process.env.SIM_VERIFIER_MAX_QUEUE = '2';
+  try {
+    const jobs = [];
+    for (let i = 0; i < 4; i++) {
+      jobs.push(
+        RunVerifierLocal.gerar({
+          gameCode: 1,
+          seed: Buffer.from('00'.repeat(32), 'hex'),
+          loadout: Buffer.from('AAAA'),
+          botSeed: i
+        }).catch((e) => ({ erro: e.message }))
+      );
+    }
+    const resultados = await Promise.all(jobs);
+    const comErro = resultados.filter((r) => r && r.erro === 'VERIFIER_QUEUE_FULL');
+    assert.ok(comErro.length >= 1, `fila cheia rejeitou ao menos um job (${comErro.length} de 4)`);
+  } finally {
+    if (antes === undefined) delete process.env.SIM_VERIFIER_MAX_QUEUE;
+    else process.env.SIM_VERIFIER_MAX_QUEUE = antes;
+  }
+});

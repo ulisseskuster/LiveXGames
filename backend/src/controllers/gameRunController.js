@@ -36,6 +36,7 @@ const ERROS = [
     503,
     'Não foi possível verificar a partida agora. Vida e itens foram devolvidos.'
   ],
+  [/^VERIFIER_QUEUE_FULL$/, 503, 'Muitas partidas em andamento. Tente novamente em instantes.'],
   [/^RUN_REJECTED/, 422, 'A partida não passou na verificação do servidor'],
   [/^USER_NOT_FOUND$/, 404, 'Usuário não encontrado']
 ];
@@ -51,10 +52,10 @@ function responderErro(res, error, contexto) {
 class GameRunController {
   static async iniciar(req, res) {
     try {
-      const { gameId, itemIds, streamerId } = req.body || {};
+      const { gameId, itemIds, streamerId, requestId } = req.body || {};
       const abertura = await GameRunService.iniciar(
         req.user.id,
-        { gameId, itemIds, streamerId },
+        { gameId, itemIds, streamerId, requestId },
         req.app.get('io')
       );
       return ok(res, abertura, 'Partida aberta');

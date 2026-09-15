@@ -1855,6 +1855,9 @@ async function loadLeaderboard() {
       chip.classList.toggle('is-active', ativo);
       chip.setAttribute('aria-pressed', String(ativo));
     });
+  // Guarda de corrida: só a ÚLTIMA chamada pode pintar a tabela. Fetch antigo
+  // que chegar depois (rede lenta, refetch agendado vs clique) é descartado.
+  const minhaVez = ++loadLeaderboard.versao;
   try {
     const res = await fetch(
       `${API_URL}/api/leaderboard/${periodo}?gameId=${encodeURIComponent(gameId)}`
@@ -1863,6 +1866,7 @@ async function loadLeaderboard() {
     // Troca rápida de jogo ou período: a resposta anterior pode chegar depois.
     if (
       data.success &&
+      minhaVez === loadLeaderboard.versao &&
       gameId === (state.rankingGame || state.currentGame) &&
       periodo === state.rankingPeriod
     ) {
@@ -1876,6 +1880,7 @@ async function loadLeaderboard() {
     console.error('Erro ao carregar leaderboard:', err);
   }
 }
+loadLeaderboard.versao = 0;
 
 document.getElementById('rankingGameFilters')?.addEventListener('click', (e) => {
   const chip = e.target.closest('[data-ranking-game]');

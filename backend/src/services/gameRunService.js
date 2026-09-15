@@ -69,9 +69,13 @@ function compromissoDaPartida(seed, botSeed) {
 class GameRunService {
   /**
    * @param {string} userId
-   * @param {{gameId?: unknown, itemIds?: unknown, streamerId?: string}} pedido
+   * @param {{gameId?: unknown, itemIds?: unknown, streamerId?: string, requestId?: unknown}} pedido
    */
-  static async iniciar(userId, { gameId, itemIds = [], streamerId = null } = {}, io = null) {
+  static async iniciar(
+    userId,
+    { gameId, itemIds = [], streamerId = null, requestId } = {},
+    io = null
+  ) {
     const jogo = typeof gameId === 'string' ? jogoPorId(gameId) : null;
     if (!jogo || !jogo.disponivel()) throw new Error(`INVALID_GAME_ID:${String(gameId)}`);
     const gameIdValido = /** @type {string} */ (gameId);
@@ -128,10 +132,25 @@ class GameRunService {
     // rodada: queda no meio perdia tudo. Agora a intenção (status 'reserving')
     // é gravada NA MESMA TRANSAÇÃO que debita vida e reserva itens. Se o
     // processo cair, sobra a intenção órfã → recuperação devolve os recursos.
-    const idempotencyKey = crypto
-      .createHash('sha256')
-      .update(`${userId}:${gameId}:${JSON.stringify(ids)}:${Date.now()}`)
-      .digest('hex');
+    //
+    // Chave de idempotência: usa o requestId que o cliente enviar, se vier
+    // (repetir o mesmo pedido com o mesmo requestId reusa a MESMA intenção),
+    // senão deriva de um nonce forte próprio desta chamada. Antes a chave
+    // usava Date.now(): duas aberturas no mesmo milissegundo colidiam e uma
+    // repetição legítima do mesmo pedido virava DUAS rodadas.
+    const requestIdValido =
+      typeof requestId === 'string' &&
+      requestId.length >= 8 &&
+      requestId.length <= 128 &&
+      /^[A-Za-z0-9._:-]+$/.test(requestId);
+    const idempotencyKey = requestIdValido
+      ? crypto.createHash('sha256').update(`${userId}:${gameIdValido}:${requestId}`).digest('hex')
+      : crypto
+          .createHash('sha256')
+          .update(
+            `${userId}:${gameIdValido}:${JSON.stringify(ids)}:${crypto.randomBytes(16).toString('hex')}`
+          )
+          .digest('hex');
 
     const channelLife = canal ? await ChannelInventory.consumeLife(userId, canal) : false;
     const vida = channelLife ? { usouDourada: false } : await UserModel.consumeLife(userId);
@@ -195,6 +214,7 @@ class GameRunService {
           expiresAt: new Date(Date.now() + duracaoMs + MARGEM_EXPIRACAO_MS).toISOString(),
           streamerId: canal,
           usedChannelLife: channelLife,
+          usedSubLife: vidaUsouDourada,
           idempotencyKey,
           itemIds: reservados
         });
@@ -610,6 +630,16 @@ class GameRunService {
       receipt.channelLivesRemaining = Number(wallet.extra_lives || 0);
     }
     const liquidada = await GameRunModel.liquidarGerada(run.id, userId, receipt);
+    // O ranking agregado mudou (um voo novo entrou): zera o cache curto na
+    // hora para a próxima leitura recalcular, sem esperar o TTL.
+    if (liquidada.nova) {
+      try {
+        const LeaderboardService = require('./leaderboardService');
+        LeaderboardService.invalidar();
+      } catch (e) {
+        console.warn('[Leaderboard] Falha ao invalidar cache:', e.message);
+      }
+    }
     // Vai para todo socket aberto: só o que o aviso do chat mostra. Id, papel,
     // itens e o filme da rodada não são da conta de quem assiste.
     if (liquidada.nova && io && usuario)
