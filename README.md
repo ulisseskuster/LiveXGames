@@ -477,28 +477,35 @@ Levantadas nas auditorias de 12 e 13/09/2026 e conferidas no código em
 
 **Rodadas**
 
-11. Vida e itens são gastos antes de o worker gerar a rodada e de `game_runs` ser
+11. ~~Vida e itens são gastos antes de o worker gerar a rodada e de `game_runs` ser
     gravado (`gameRunService.js`). Uma queda nesse intervalo não tem recuperação
-    persistente.
-12. Se a resposta do `POST /api/game/runs` se perder, não há chave de
-    idempotência.
-13. A fila do verificador não tem limite (`backend/src/services/sim/runVerifier.js`).
+    persistente.~~ **✅ Corrigido em 15/09/2026** — intenção `reserving` registrada
+    antes do consumo, recuperável após crash (migração 028).
+12. ~~Se a resposta do `POST /api/game/runs` se perder, não há chave de
+    idempotência.~~ **✅ Corrigido em 15/09/2026** — `requestId` opcional com
+    `idempotency_key` única (nunca `Date.now()`).
+13. ~~A fila do verificador não tem limite (`backend/src/services/sim/runVerifier.js`).~~
+    **✅ Corrigido em 15/09/2026** — teto `SIM_VERIFIER_MAX_QUEUE` (default 50)
+    com rejeição `VERIFIER_QUEUE_FULL` → 503.
 
 **Bloqueios adicionais confirmados na auditoria de escala**
 
-- **P0 — Doação:** `livepixService.js` grava a doação antes de creditar a
-  carteira, fora de uma transação única. Falha de crédito seguida de reentrega
-  retornou idempotência com saldo 0, embora a doação registrasse 1.000 moedas.
-- **P0 — Abertura:** a pendência 11 foi reproduzida com encerramento de processo:
-  vidas 3 → 2, item 1 → 0, nenhuma rodada persistida para recuperação.
+- ~~**P0 — Doação:** `livepixService.js` grava a doação antes de creditar a
+  carteira, fora de uma transação única.~~ **✅ Corrigido em 15/09/2026** (migração
+  027, crédito atômico + `external_id` único, idempotente).
+- ~~**P0 — Abertura:** a pendência 11 foi reproduzida com encerramento de processo.~~ 
+  **✅ Corrigido em 15/09/2026** (migração 028, intenção `reserving` recuperável).
 - **P1 — Múltiplas instâncias:** Socket.IO sem adaptador compartilhado; broadcasts
-  locais e globais sem limitação de mensagens por socket.
+  locais e globais sem limitação de mensagens por socket. *(chat limitado e
+  escopado à `stream_room` em 15/09; falta ativar o adaptador — P1-C)*
 - **P1 — Capacidade/operação:** sem teste representativo de mais de 1.000 sessões,
-  limite de fila, encerramento controlado, alertas ou restauração demonstrada.
-  O plano declarado é gratuito; o plano real no painel não foi consultado.
-- **Funcionalidade incompleta:** envio Web Push sem remetente/configuração de
-  chave de aplicação; central sem criação automática de notificações nos eventos
-  de produção; quatro conquistas de streamer só existem no catálogo.
+  encerramento controlado antes não existia *(feito em 15/09: SIGTERM/SIGINT)*,
+  alertas ou restauração demonstrada. O plano declarado é gratuito; o plano real
+  no painel não foi consultado.
+- **Funcionalidade incompleta:** Web Push sem remetente/configuração de chave de
+  aplicação *(serviço criado em 15/09, opt-in via `VAPID_*`)*; central sem criação
+  automática de notificações nos eventos de produção *(conquistas ligadas em
+  15/09)*; quatro conquistas de streamer só existem no catálogo.
 
 **Frontend e código**
 

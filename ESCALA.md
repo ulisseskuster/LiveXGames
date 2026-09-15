@@ -4,6 +4,9 @@
 
 Avaliação em 14/09/2026, commit `98b7ee6`. O fluxo normal tem cobertura funcional, mas há falhas reproduzidas de recuperação de dados e requisitos ausentes para operar várias instâncias. Aprovação de testes funcionais não constitui medição de capacidade.
 
+> **Atualização em 15/09/2026 — os bloqueios P0 foram corrigidos e validados no CI real (PostgreSQL).**
+> Resolvidos: doação atômica (P0-A), abertura recuperável com intenção `reserving` e idempotência (P0-B), revogação de sessão (`token_version`), Web Push ligado às conquistas, readiness honesta (`/health` 503 sem schema), encerramento controlado (SIGTERM/SIGINT) e deadlock 40P01 de liquidações concorrentes. Falta o P1-C (eventos entre instâncias) e a validação de carga e operação.
+
 ## Fluxo avaliado
 
 ```mermaid
@@ -42,39 +45,34 @@ Os intervalos **F → H** e **M → N** permitem perda persistente de direitos d
 
 ### P0 — Doação concluída sem crédito recuperável
 
-Em `backend/src/services/livepixService.js:242`, a doação é gravada antes de `creditFromDonation` (linha 271). Uma nova tentativa retorna antecipadamente ao encontrar `external_id` (linha 165).
-
-**Reprodução:** injetei uma falha na chamada de crédito após a gravação. Na reentrega, o serviço retornou `idempotent: true`; o banco continha `status: completed` e `coins_credited: 1000`, mas o saldo continuava **0**, quando deveria ser **1.000**.
-
-**Para liberar:** gravar doação, saldo e extrato na mesma transação, ou usar estado persistente pendente com recuperação idempotente. Testar reentrega concorrente e falhas em cada ponto entre gravações. Nunca marcar como concluído um crédito que não ocorreu.
+**✅ RESOLVIDO em 15/09/2026 (migração 027 + commit `26cc53c`).** Em `backend/src/services/livepixService.js`, a doação, o saldo e o extrato agora são gravados na mesma transação (crédito atômico) com `external_id` único; a reentrega é idempotente e nunca marca como concluído um crédito que não ocorreu. Coberto por testes de webhook (reentrega, paralelo, reconciliação) e validado no CI com PostgreSQL real.
 
 ### P0 — Queda durante abertura perde vida e item
 
-`backend/src/services/gameRunService.js:115` consome vida e a linha 124 reserva itens. A geração ocorre na linha 146 e a gravação de `game_runs` apenas na linha 161. O `catch` pode compensar exceções, mas não executa quando o processo termina.
-
-**Reprodução:** encerrei somente um processo filho de teste no começo da geração. Resultado persistido: vidas **3 → 2**, item **1 → 0**, **nenhuma rodada gravada**. Não há registro que permita a recuperação normal dessa abertura.
-
-**Para liberar:** reservar recursos e registrar a intenção de rodada atomicamente; geração fora da transação longa; liquidação ou compensação recuperável após reinício. Incluir chave idempotente para repetição do mesmo pedido.
+**✅ RESOLVIDO em 15/09/2026 (migração 028 + commit `26cc53c`).** `backend/src/services/gameRunService.js` agora registra a intenção da rodada em `reserving` ANTES de consumir recursos, com `idempotency_key` única; a geração fica fora da transação longa; falha/crash deixa intenção órfã recuperável (devolve vida e itens), e a liquidação é transacional com recibo idempotente. Coberto por `gameRunIntention.test.js` (6 testes) e validado no CI.
 
 ### P1 — Eventos não atravessam instâncias
 
-`backend/src/server.js:86` cria Socket.IO sem adaptador compartilhado. Salas e `io.emit` pertencem ao processo local. Um webhook recebido no servidor A não avisa clientes conectados ao B. O chat em `server.js:809` aceita mensagens sem limite por socket e retransmite globalmente; eventos de partidas também são globais.
+**⚠️ PRÓXIMO PASSO (P1-C).** `backend/src/server.js` cria Socket.IO sem adaptador compartilhado. Salas e `io.emit` pertencem ao processo local. Um webhook recebido no servidor A não avisa clientes conectados ao B. O chat já tem limite por socket (5 msg/10s) e broadcasts restritos à `stream_room` (feito em 15/09).
 
-**Para liberar:** configurar adaptador compartilhado, definir a política de transporte/afinidade e validar cliente em A recebendo evento originado em B. Limitar mensagens e restringir broadcasts ao público necessário. A documentação oficial descreve tanto o encaminhamento entre servidores quanto o tratamento de sessões para long-polling. [Socket.IO: múltiplos servidores](https://socket.io/docs/v4/using-multiple-nodes/).
+**Para liberar:** configurar adaptador compartilhado (`@socket.io/postgres-adapter`, já instalado, opt-in via `SOCKET_ADAPTER=postgres`, sem Redis), definir a política de transporte/afinidade e validar cliente em A recebendo evento originado em B. A documentação oficial descreve tanto o encaminhamento entre servidores quanto o tratamento de sessões para long-polling. [Socket.IO: múltiplos servidores](https://socket.io/docs/v4/using-multiple-nodes/).
 
 ### P1 — Readiness e publicação não comprovadas
 
-`backend/src/config/database.js:81` marca conexão disponível antes das migrações; falha de migração é capturada e apenas registrada na linha 94. `/health` usa esse booleano, permitindo serviço considerado saudável com schema incompleto. O servidor também não possui rotina explícita para terminar requisições e workers antes de sair.
-
-O site público respondeu **200** em `/` e `/health`. O `app.js` público foi baixado e seu hash calculado: **4385fc4470**, igual ao arquivo do commit `98b7ee6`, enquanto o CI desse commit ainda executava. Isso exige conferir o gate no painel do Render; o hash confirma o asset, não identifica sozinho todo o commit implantado no backend.
-
-**Para liberar:** readiness condicionada a schema pronto, encerramento controlado, teste de deploy sob tráfego e confirmação do gate efetivo e do commit publicado. Migrações devem rodar de forma serializada, evitando que instâncias novas apliquem o mesmo arquivo simultaneamente.
+**✅ RESOLVIDO em 15/09/2026 (commits `5892479`, `59a89d3`).** `database.js` agora só marca `isSchemaReady` após o autoMigrate concluir; `/health` responde **503 degraded** enquanto o schema não está pronto; o servidor tem encerramento controlado (SIGTERM/SIGINT: drena conexões, fecha Socket.IO e encerra workers), e as migrações rodam serializadas com advisory lock (`pg_try_advisory_lock`, esperando a vez em vez de pular). O CI roda com PostgreSQL real e passou por completo.
 
 ### P1 — Infraestrutura e capacidade sem comprovação
 
 `render.yaml:6` declara `plan: free`. Não consultei o plano efetivo no painel. Na modalidade gratuita, Render não permite escalar além de uma instância e pode suspender o serviço após inatividade; a própria documentação não recomenda essa modalidade para produção. [Limites do Render Free](https://render.com/docs/free).
 
-O pool PostgreSQL tem **10 conexões por processo** (`database.js:57`); isso não representa um limite de dez usuários, mas exige orçamento de conexões ao multiplicar instâncias. A fila de simulação não possui teto nem prazo durante a espera: o timeout de dez segundos começa apenas ao despachar para um worker (`runVerifier.js:27,78,109`). Não há prova de saturação em 1.000 usuários, mas falta proteção previsível contra sobrecarga.
+O pool PostgreSQL tem **10 conexões por processo** (`database.js:57`); isso não
+representa um limite de dez usuários, mas exige orçamento de conexões ao multiplicar
+instâncias. A fila de simulação agora tem **teto configurável**
+(`SIM_VERIFIER_MAX_QUEUE`, default 50) com rejeição controlada
+`VERIFIER_QUEUE_FULL` → 503 (feito em 15/09). O ranking usa **cache TTL 5s por
+chave com invalidação** na liquidação (15/09), reduzindo as ~300 req/s estimadas.
+Ainda não há prova de saturação em 1.000 usuários; falta teste de carga em
+homologação.
 
 Consultas de conquistas percorrem o histórico a cada rodada. Com 1.500 clientes no mesmo jogo, o recarregamento do ranking a cada cinco segundos pode produzir aproximadamente **300 requisições/s**, se continuamente acionado; essa é uma estimativa de cenário, não tráfego medido. Medir planos SQL e custo com volume de histórico representativo antes de decidir cache ou contadores incrementais.
 
@@ -84,9 +82,9 @@ Consultas de conquistas percorrem o histórico a cada rodada. Com 1.500 clientes
 
 Não encontrei métricas de latência/erros/fila/pool, alertas ou procedimento testado de backup e restauração no repositório. O README também registra essas pendências. Isso não prova ausência de backup no provedor; sua configuração e restauração precisam ser demonstradas.
 
-Tokens JWT são aceitos sem consulta de revogação (`backend/src/middlewares/auth.js:32`); logout e alteração de senha não invalidam antecipadamente tokens já emitidos, conforme a pendência documentada.
+**✅ RESOLVIDOS em 15/09:** revogação de sessão — tokens JWT carregam `tv` (token_version) e o `requireAuth` confere contra o banco; logout e troca de senha invalidam tokens emitidos antes (`747071e`). Web Push — `pushNotificationService` com VAPID opt-in; `sendToUser` sempre grava a notificação e só envia push se `VAPID_*` configurados; remoção de inscrições 410; ligado às conquistas (`d61d971`). Quatro conquistas de streamer continuam só no catálogo.
 
-**Para liberar:** alertas para erros, latência, conexões, fila e divergência de carteira; teste de restauração com RPO/RTO definidos pelo negócio; revogação de sessão para logout/troca de senha; verificação das integrações reais de e-mail/OAuth/armazenamento. Web Push e conquistas faltantes devem ser concluídos ou explicitamente retirados do escopo de lançamento.
+**Para liberar (restante):** alertas para erros, latência, conexões, fila e divergência de carteira; teste de restauração com RPO/RTO definidos pelo negócio; verificação das integrações reais de e-mail/OAuth/armazenamento.
 
 ## Evidências executadas
 
@@ -98,10 +96,20 @@ Tokens JWT são aceitos sem consulta de revogação (`backend/src/middlewares/au
 
 ## Critérios propostos para aprovação
 
-1. Corrigir os dois P0 e passar cenários de crash, timeout e reentrega sem perda ou crédito duplicado.
-2. Validar ao menos duas instâncias, incluindo eventos entre elas e reinício de uma durante partidas.
+1. ~~Corrigir os dois P0 e passar cenários de crash, timeout e reentrega sem perda ou crédito duplicado.~~ **✅ Cumprido em 15/09/2026** (migrações 027/028 + testes de intenção/idempotência validados no CI com PostgreSQL real).
+2. Validar ao menos duas instâncias, incluindo eventos entre elas e reinício de uma durante partidas. **⚠️ É o próximo passo (P1-C).**
 3. Em homologação, executar **1.500 sessões simultâneas por 60 minutos**, com identidades e canais distintos, WebSockets ativos, navegação, partidas, loja e resgates. A mistura de atividade deve refletir o uso esperado; uma sessão conectada não equivale a uma requisição por segundo.
 4. Exercitar pico de **2× a carga definida**, medir fila e recuperação. Metas iniciais propostas: erros inesperados <0,5%, p95 de leitura <500 ms, p95 de abertura <2 s, sem crescimento contínuo de memória/fila e **zero divergência econômica**. Essas metas são critérios a testar, não resultados obtidos.
 5. Demonstrar restauração de backup, alertas e implantação/reversão sob tráfego. Confirmar CI concluído e correspondência entre commit aprovado e serviço publicado.
+
+## Próximo passo — Sessão seguinte (16/09/2026)
+
+**P1-C: eventos entre instâncias via `@socket.io/postgres-adapter`.**
+
+- Já instalado `@socket.io/postgres-adapter`; código de ativação existe em `server.js` (opt-in `SOCKET_ADAPTER=postgres`).
+- Fazer: subir 2 instâncias localmente (portas diferentes) com `SOCKET_ADAPTER=postgres`, validar chat/eventos atravessando A→B, testar reinício de uma instância durante partidas, definir política de long-polling (sticky sessions no Render).
+- Depois: teste de carga em homologação (1.500 sessões) e alertas/backup.
+- Padrão de trabalho: rodar `npm --prefix backend test` + lint + typecheck antes de cada commit; commits por fase; `gh run watch`; nunca empilhar sobre CI aberto.
+- Lições do Postgres no CI: testes que criam dados como 1ª ação usam o pool assíncrono — `await db.whenReady()` antes (senão create cai no InMemory e `findById` devolve null → 404); liquidações concorrentes do mesmo usuário exigem `pg_advisory_xact_lock(hashtext(userId))` na transação (senão deadlock 40P01). Reprodução local: container `lxg_pg15` (postgres:15, porta 5433, senha `postgres`, bancos `stream_gamification_test` e `livex_channel_test`).
 
 Até essas evidências existirem, o projeto pode seguir em homologação e testes controlados; não há base para aprovar a meta de mais de 1.000 usuários simultâneos.

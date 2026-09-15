@@ -6,28 +6,34 @@ O objetivo atual passou a ser **mais de 1.000 usuários simultâneos**.
 **Escala não aprovada**; seguir [ESCALA.md](ESCALA.md) e o estado atual do
 [README.md](README.md). As seções visuais abaixo são histórico e backlog visual.
 
+- **15/09/2026 — P0s corrigidos e CI 100% verde.** Os dois bloqueios P0 (doação
+  atômica com migração 027, abertura recuperável com intenção `reserving` e
+  idempotência na 028) foram implementados e validados no CI com PostgreSQL real.
+  Também entregues: revogação de sessão (`token_version`), Web Push ligado a
+  conquistas, readiness honesta (`/health` 503 sem schema), encerramento
+  controlado (SIGTERM/SIGINT), advisory lock de migração (espera a vez), teto de
+  fila do verificador (`VERIFIER_QUEUE_FULL` 503), cache de ranking TTL 5s e
+  race-guard no frontend. O run `34947178869` fechou com **Backend tests, Lint,
+  Jogos e E2E todos success** (229 testes backend).
+- **Próximo passo:** P1-C — eventos entre instâncias via
+  `@socket.io/postgres-adapter` (opt-in `SOCKET_ADAPTER=postgres`), depois teste
+  de carga em homologação (1.500 sessões) e alertas/backup. Detalhes no final
+  de [ESCALA.md](ESCALA.md).
 - `98b7ee6` foi commitado e enviado para `main` com autorização do usuário.
   Corrigiu conquistas repetidas, agregações de rankings/dashboard, consulta de
   itens, remoção de inscrição push alheia, UI de visitante e relatório do CI.
-- Validação local concluída: **211 backend + 65 E2E**, PostgreSQL real,
-  lint, TypeScript, Prettier e build dos jogos. Não confundir isso com teste de carga.
-- CI a consultar: [34860600309](https://github.com/ulisseskuster/LiveXGames/actions/runs/34860600309).
-  Na última consulta, backend/lint/jogos verdes; E2E pendente.
-- **Ainda não corrigido:** falha após gravar doação deixa crédito perdido;
-  queda antes de persistir rodada perde vida e item. Ambos reproduzidos em
-  PostgreSQL descartável. Nenhum teste de carga foi disparado em produção.
-- Depois dos dois P0: adaptador Socket.IO entre instâncias, controle de fila,
-  readiness/migrações, gate de deploy, observabilidade e backup/restauração.
-- Push real e quatro conquistas de streamer continuam incompletos.
+- **Ainda não corrigido:** teste de carga em produção; adaptador Socket.IO ativo
+  (código presente, opt-in não ligado); alertas/observabilidade e
+  backup/restauração demonstrados; quatro conquistas de streamer incompletas.
 - Evidências locais: `artifacts/scale-audit-evidence.json`; reprodução:
   `scratch/scale-audit.cjs` (somente banco descartável local, com falhas intencionais).
   PostgreSQL temporário encerrado. O diagnóstico permanente está em `ESCALA.md`.
 - Documentação preservada em commit próprio após `98b7ee6`; consultar o histórico
   de `main` para identificar a revisão documental mais recente.
 
-**Ordem de retomada:** verificar CI → corrigir atomicidade do webhook → tornar
-abertura de rodada recuperável → testar falhas → preparar operação em múltiplas
-instâncias → testar 1.500 sessões em homologação → reavaliar aprovação.
+**Ordem de retomada:** ~~verificar CI~~ → ~~corrigir atomicidade do webhook~~ →
+~~tornar abertura de rodada recuperável~~ → **P1-C eventos entre instâncias** →
+testar 1.500 sessões em homologação → reavaliar aprovação.
 
 ---
 
