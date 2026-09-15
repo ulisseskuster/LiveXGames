@@ -269,19 +269,20 @@ async function runAutoMigration(pool) {
     // migrando, esta ESPERA a vez dela (polling curto) em vez de pular — pular
     // deixaria um processo novo com schema/seed incompletos (no CI, os testes
     // sobem o servidor em paralelo e cada um precisa do schema completo).
-    // Não-bloqueante por instância: nunca seguramos o boot atrás de uma fila
-    // longa; o timeout curto cobre o caso de outra instância presa.
-    const LOCK_TIMEOUT_MS = 10_000;
+    // Sempre espera até obter o lock: desistir após timeout permitia DOIS
+    // processos migrando juntos, e o schema/seed/migrações em paralelo
+    // travavam linhas em ordens diferentes → deadlock 40P01 observado no CI.
+    // O lock é liberado no finally abaixo, então a espera é finita.
     const LOCK_POLL_MS = 250;
-    const lockInicio = Date.now();
+    let lockEsperaInicio = Date.now();
     while (!lockObtido) {
       lockObtido = await adquirirLockMigracao(client);
       if (lockObtido) break;
-      if (Date.now() - lockInicio > LOCK_TIMEOUT_MS) {
+      if (Date.now() - lockEsperaInicio > 10_000) {
         console.warn(
-          '[AutoMigrate] Advisory lock não liberado em 10s. Seguindo sem lock (a migração é idempotente).'
+          '[AutoMigrate] Advisory lock ainda ocupado (10s). Continuando a espera (a migração é idempotente e o lock é liberado no finally).'
         );
-        break;
+        lockEsperaInicio = Date.now();
       }
       await new Promise((r) => setTimeout(r, LOCK_POLL_MS));
     }

@@ -153,12 +153,25 @@ test('UserModel: o dia das douradas vira à meia-noite de Brasília, não à de 
 });
 
 test('AuthService: login de administrador deve expor papel de admin e acesso privilegiado', async () => {
-  const adminUsername = (process.env.ADMIN_USERNAME || 'admin_livex').trim();
-  const adminPassword = process.env.ADMIN_PASSWORD;
-  const result = await AuthService.login(adminUsername, adminPassword);
+  // Fixture isolada: o admin global só existe no banco se ADMIN_PASSWORD estiver
+  // definido no ambiente (autoMigrate pula o sync sem ele) e no InMemory o seed
+  // é frágil a timing de conexão. Criar o admin aqui mesmo valida a mesma coisa
+  // (papel admin + saldo elevado) sem depender do ambiente.
+  const id = 'admin_fixture_' + Date.now().toString().slice(-6);
+  const criado = await UserModel.create({
+    username: id,
+    email: `${id}@test.com`,
+    password: 'demo123Password',
+    role: 'admin'
+  });
+  // O create abre carteira zerada; o saldo elevado do admin é um privilégio do
+  // seed/sync (99999), então a fixture dá o mesmo top-up explícito.
+  const WalletModel = require('../src/models/walletModel');
+  await WalletModel.addCredits(criado.id, 99999);
+  const result = await AuthService.login(id, 'demo123Password');
 
   assert.ok(result.token, 'Token deve existir para o admin');
-  assert.equal(result.user.username, adminUsername);
+  assert.equal(result.user.username, id);
   assert.equal(result.user.role, 'admin');
   assert.equal(result.user.lives, 999, 'Admin deve iniciar com vidas máximas');
   assert.equal(
@@ -166,6 +179,7 @@ test('AuthService: login de administrador deve expor papel de admin e acesso pri
     99999,
     'Admin deve ter saldo elevado para moderação e testes'
   );
+  assert.equal(criado.id, result.user.id, 'Login deve retornar o admin criado');
 });
 
 test('AuthService: vincular Kick e desvincular contas', async () => {
