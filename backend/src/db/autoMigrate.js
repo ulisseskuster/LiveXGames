@@ -266,15 +266,24 @@ async function runAutoMigration(pool) {
     );
 
     // Lock entre instâncias (P1 do ESCALA.md): se outra instância já está
-    // migrando, esta espera a próxima volta (a checagem de schema_migrations
-    // na inicialização seguinte pega o que a outra aplicou). Não-bloqueante:
-    // nunca seguramos o boot de várias instâncias atrás de uma fila.
-    lockObtido = await adquirirLockMigracao(client);
-    if (!lockObtido) {
-      console.log(
-        '[AutoMigrate] Outra instância está migrando (advisory lock ocupado). Pulando esta volta; o próximo boot aplica o que faltar.'
-      );
-      return { success: true, skipped: 'lock' };
+    // migrando, esta ESPERA a vez dela (polling curto) em vez de pular — pular
+    // deixaria um processo novo com schema/seed incompletos (no CI, os testes
+    // sobem o servidor em paralelo e cada um precisa do schema completo).
+    // Não-bloqueante por instância: nunca seguramos o boot atrás de uma fila
+    // longa; o timeout curto cobre o caso de outra instância presa.
+    const LOCK_TIMEOUT_MS = 10_000;
+    const LOCK_POLL_MS = 250;
+    const lockInicio = Date.now();
+    while (!lockObtido) {
+      lockObtido = await adquirirLockMigracao(client);
+      if (lockObtido) break;
+      if (Date.now() - lockInicio > LOCK_TIMEOUT_MS) {
+        console.warn(
+          '[AutoMigrate] Advisory lock não liberado em 10s. Seguindo sem lock (a migração é idempotente).'
+        );
+        break;
+      }
+      await new Promise((r) => setTimeout(r, LOCK_POLL_MS));
     }
 
     // 1. Localiza os scripts SQL
