@@ -889,4 +889,66 @@ if (require.main === module) {
   });
 }
 
+// ─── Encerramento controlado (P1 do ESCALA.md) ───
+// O Render envia SIGTERM antes de matar/reciclar a instância. Sem handler, o
+// processo morria na hora: requisições em voo eram cortadas, e a fila de
+// verificação/generação WASM ficava órfã. Agora:
+//   1. Para de aceitar conexões novas (server.close);
+//   2. Drena as requisições em andamento com um teto de DRENAGEM_MAX_MS;
+//   3. Fecha o Socket.IO (desconecta clientes, sem eventos pendurados);
+//   4. Encerra os workers do verificador (workers ociosos são unref, mas os
+//      ocupados terminam o job atual antes de sair).
+// As intenções 'reserving' e rodadas 'verifying' que sobrarem são recuperadas
+// no próximo boot (abandonarReservingStale / recuperarGeradas).
+//
+// O teste de shutdown não depende de sinal do SO (no Windows child.kill não
+// entrega SIGTERM/SIGINT de forma confiável): com SHUTDOWN_PORT definido, uma
+// conexão TCP dispara o mesmo caminho de graceful — igualzinho ao SIGTERM.
+let encerrando = false;
+async function gracefulShutdown(sinal) {
+  if (encerrando) return;
+  encerrando = true;
+  console.log(`[Shutdown] ${sinal} recebido. Iniciando encerramento controlado...`);
+
+  // Para de aceitar conexões novas e drena as em voo com timeout.
+  // Teto de segurança: se algo ficou pendurado, força a saída.
+  const DRENAGEM_MAX_MS = 10_000;
+  const drenagem = new Promise((resolve) => {
+    server.close(() => resolve());
+    setTimeout(() => resolve(), DRENAGEM_MAX_MS);
+  });
+  await drenagem;
+
+  try {
+    await io.close();
+  } catch (err) {
+    console.warn('[Shutdown] Falha ao fechar Socket.IO:', err.message);
+  }
+
+  try {
+    const { encerrar } = require('./services/sim/runVerifier');
+    await encerrar();
+  } catch (err) {
+    console.warn('[Shutdown] Falha ao encerrar workers do verificador:', err.message);
+  }
+
+  console.log('[Shutdown] Encerramento concluído. Até logo!');
+  process.exit(0);
+}
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+const shutdownPort = Number(process.env.SHUTDOWN_PORT || 0);
+if (shutdownPort > 0) {
+  const net = require('net');
+  net
+    .createServer((socket) => {
+      socket.end();
+      gracefulShutdown('SHUTDOWN_PORT');
+    })
+    .listen(shutdownPort, () => {
+      console.log(`[Shutdown] Porta de shutdown escutando em ${shutdownPort}`);
+    });
+}
+
 module.exports = { app, server, io, podeEntrarNaSala };
