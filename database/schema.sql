@@ -261,9 +261,19 @@ ALTER TABLE shop_items ADD CONSTRAINT shop_items_type_check
 ALTER TABLE shop_items ADD COLUMN IF NOT EXISTS game_id VARCHAR(40) NOT NULL DEFAULT 'all';
 
 -- Idempotência da abertura de rodadas (Fase 2, P0-B, migration 028).
--- A coluna e o índice ficam aqui para que o schema.sql do CI e do autoMigrate
--- já os tenham; bancos antigos recebem via migration 028.
-ALTER TABLE public.game_runs ADD COLUMN IF NOT EXISTS idempotency_key TEXT;
-CREATE UNIQUE INDEX IF NOT EXISTS idx_game_runs_idempotency_key
-  ON public.game_runs(idempotency_key) WHERE idempotency_key IS NOT NULL;
+-- Fica aqui para que o schema.sql do CI e do autoMigrate já tenham a coluna,
+-- mas não pode quebrar quando game_runs ainda não existe (ela é criada pela
+-- migration 019, que roda DEPOIS do schema.sql). DO + IF EXISTS evita o erro
+-- "relation public.game_runs does not exist" que derrubava o autoMigrate.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'game_runs'
+  ) THEN
+    ALTER TABLE public.game_runs ADD COLUMN IF NOT EXISTS idempotency_key TEXT;
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_game_runs_idempotency_key
+      ON public.game_runs(idempotency_key) WHERE idempotency_key IS NOT NULL;
+  END IF;
+END $$;
 
