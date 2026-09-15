@@ -230,6 +230,28 @@ async function seedDemoPersonas(client) {
  * Auto-Migrador Resiliente para PostgreSQL (Supabase, Neon, Railway, Render, Local)
  * Executa schema.sql e seed.sql automaticamente na inicialização com idempotência.
  */
+
+// Chave do advisory lock de migração ('LXG' em hex). Evita que duas instâncias
+// subindo juntas apliquem a MESMA migração simultaneamente (P1 do ESCALA.md).
+const MIGRATION_LOCK_KEY = 0x4c5847;
+
+/**
+ * Tenta adquirir o lock de migração entre instâncias (não-bloqueante).
+ * @param {{query: Function}} client
+ * @returns {Promise<boolean>} true se esta instância pode migrar.
+ */
+async function adquirirLockMigracao(client) {
+  const { rows } = await client.query('SELECT pg_try_advisory_lock($1) AS lock_obtido', [
+    MIGRATION_LOCK_KEY
+  ]);
+  return rows[0]?.lock_obtido === true;
+}
+
+/** Libera o advisory lock de migração (idempotente). */
+async function liberarLockMigracao(client) {
+  await client.query('SELECT pg_advisory_unlock($1)', [MIGRATION_LOCK_KEY]).catch(() => {});
+}
+
 async function runAutoMigration(pool) {
   if (!pool) {
     console.warn('[AutoMigrate] Pool PostgreSQL não fornecido. Ignorando migração.');
@@ -237,10 +259,23 @@ async function runAutoMigration(pool) {
   }
 
   const client = await pool.connect();
+  let lockObtido = false;
   try {
     console.log(
       '[AutoMigrate] Iniciando verificação e sincronização automática do banco de dados...'
     );
+
+    // Lock entre instâncias (P1 do ESCALA.md): se outra instância já está
+    // migrando, esta espera a próxima volta (a checagem de schema_migrations
+    // na inicialização seguinte pega o que a outra aplicou). Não-bloqueante:
+    // nunca seguramos o boot de várias instâncias atrás de uma fila.
+    lockObtido = await adquirirLockMigracao(client);
+    if (!lockObtido) {
+      console.log(
+        '[AutoMigrate] Outra instância está migrando (advisory lock ocupado). Pulando esta volta; o próximo boot aplica o que faltar.'
+      );
+      return { success: true, skipped: 'lock' };
+    }
 
     // 1. Localiza os scripts SQL
     const possibleSchemaPaths = [
@@ -405,6 +440,7 @@ async function runAutoMigration(pool) {
     console.error('[AutoMigrate] Erro durante a automigração do PostgreSQL:', error.message);
     return { success: false, error: error.message };
   } finally {
+    if (lockObtido) await liberarLockMigracao(client);
     client.release();
   }
 }

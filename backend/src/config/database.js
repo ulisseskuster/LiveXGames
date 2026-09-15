@@ -21,6 +21,10 @@ const needsSsl =
 
 let isDbConnected = false;
 let lastConnectionError = null;
+// O banco pode estar conectado mas com schema incompleto (autoMigrate falhou
+// ou outra instância ainda está migrando). /health não pode dizer "ok" nesse
+// estado: o Render tiraria a instância nova do rotation cedo demais.
+let isSchemaReady = false;
 
 function isConfigured() {
   return Boolean(process.env.DATABASE_URL);
@@ -86,10 +90,14 @@ async function checkConnection() {
     try {
       const { runAutoMigration } = require('../db/autoMigrate');
       const migration = await runAutoMigration(pool);
-      if (!migration.success) {
+      if (migration.success) {
+        isSchemaReady = true;
+      } else {
+        isSchemaReady = false;
         throw new Error(`AutoMigrate falhou: ${migration.error || 'erro desconhecido'}`);
       }
     } catch (migErr) {
+      isSchemaReady = false;
       console.warn(
         '[Database] AutoMigrate falhou, mas a conexão com o banco permanece ativa:',
         migErr.message
@@ -151,6 +159,8 @@ module.exports = {
   // nunca cair silenciosamente em dados voláteis do processo.
   isAvailable: () => isDbConnected || isProduction,
   isConnected: () => isDbConnected,
+  /** Readiness real: banco conectado E schema aplicado (autoMigrate com sucesso). */
+  isSchemaReady: () => isSchemaReady || !isConfigured(),
   isConfigured,
   checkConnection,
   fallbackOrThrow,

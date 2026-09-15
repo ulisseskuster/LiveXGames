@@ -342,6 +342,11 @@ app.use(
 // de uptime, sem servir de guia de reconhecimento de infraestrutura para terceiros.
 app.get('/health', (req, res) => {
   const dbConnected = db.isConnected();
+  const schemaPronto = db.isSchemaReady();
+  // Só devolve 200 quando o schema está aplicado. Conexão viva com schema
+  // incompleto (autoMigrate falhou ou outra instância ainda migra) = 503 —
+  // o Render mantém a instância fora do rotation (P1 do ESCALA.md).
+  const pronto = !db.isConfigured() || (dbConnected && schemaPronto);
   const twitchConfigured = TwitchService.isConfigured();
   const cloudinaryConfig = ImageUploadService.getCloudinaryConfig();
   const jwtConfigured = Boolean(
@@ -363,14 +368,14 @@ app.get('/health', (req, res) => {
     // 503 com o banco fora: Render e HEALTHCHECK do Docker tratam a instância
     // como doente, em vez de "viva" servindo login e loja quebrados (incidente de
     // 2026-09-13).
-    return res.status(dbConnected ? 200 : 503).json({
-      status: dbConnected ? 'ok' : 'degraded',
+    return res.status(pronto ? 200 : 503).json({
+      status: pronto ? 'ok' : 'degraded',
       timestamp: new Date().toISOString()
     });
   }
 
   // Fora de produção o InMemoryStore é um modo válido; em produção, não.
-  res.status(isProduction && !dbConnected ? 503 : 200).json({
+  res.status(isProduction && !pronto ? 503 : 200).json({
     ...basePayload,
     services: {
       database: {
