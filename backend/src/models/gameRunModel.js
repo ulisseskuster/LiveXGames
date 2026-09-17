@@ -40,23 +40,28 @@ function naMemoria(runId, userId) {
   return InMemoryStore.gameRuns.find((r) => r.id === runId && (!userId || r.user_id === userId));
 }
 
-/**
- * Idempotência real: se a MESMA chave já foi gravada, devolve a intenção
- * existente em vez de criar uma nova. O INSERT com ON CONFLICT já cobre a
- * corrida, mas sem esta checagem o retorno de uma repetição seria null e o
- * fluxo trataria como 'RUN_ALREADY_OPEN' (só quando em memória; no Postgres
- * este caminho é redundante, o ON CONFLICT acerta a corrida).
- */
-async function buscarPorChaveIdempotencia(client, idempotencyKey) {
-  if (!idempotencyKey) return null;
-  const { rows } = await client.query(
-    `SELECT * FROM game_runs WHERE idempotency_key = $1 AND status = 'reserving' LIMIT 1`,
-    [idempotencyKey]
-  );
-  return rows[0] ? normalizar(rows[0]) : null;
-}
-
 class GameRunModel {
+  /**
+   * Rodada já aberta com esta chave de idempotência (qualquer status). O
+   * serviço consulta ANTES de debitar: repetir o mesmo pedido devolve a mesma
+   * rodada em vez de gastar outra vida.
+   */
+  static async buscarPorIdempotencia(userId, idempotencyKey) {
+    if (!idempotencyKey) return null;
+    if (db.isAvailable()) {
+      const { rows } = await db.query(
+        'SELECT * FROM game_runs WHERE user_id = $1 AND idempotency_key = $2',
+        [userId, idempotencyKey]
+      );
+      return normalizar(rows[0]);
+    }
+    return normalizar(
+      InMemoryStore.gameRuns.find(
+        (r) => r.user_id === userId && r.idempotency_key === idempotencyKey
+      )
+    );
+  }
+
   static async geradasPendentes(userId) {
     if (db.isAvailable()) {
       const { rows } = await db.query(
@@ -247,7 +252,8 @@ class GameRunModel {
     expiresAt,
     inputLog = null,
     result = null,
-    status = 'open'
+    status = 'open',
+    idempotencyKey = null
   }) {
     if (db.isAvailable()) {
       try {
@@ -294,7 +300,7 @@ class GameRunModel {
       loadout,
       used_sub_life: Boolean(usedSubLife),
       status,
-      idempotency_key: null,
+      idempotency_key: idempotencyKey,
       input_log: inputLog,
       result,
       flight_run_id: null,
@@ -307,10 +313,15 @@ class GameRunModel {
   }
 
   /**
-   * Fase 2 (P0-B): grava a INTENÇÃO da rodada (status 'reserving') ANTES de
-   * consumir vida/itens, dentro da mesma transação que reserva os recursos.
-   * Se o processo cair depois, a intenção fica órfã e é recuperável (vida e
-   * itens devolvidos) — nada se perde.
+   * Grava a INTENÇÃO da rodada (status 'reserving') no `client` da transação
+   * que também debita a vida e reserva os itens (ver GameRunService.iniciar):
+   * ou tudo persiste junto, ou nada. Se o processo cair depois do COMMIT, a
+   * intenção órfã guarda o que foi debitado e GameRunService.recuperarOrfas
+   * devolve ao dono.
+   *
+   * Outra rodada em andamento do mesmo usuário (índice único parcial) ou a
+   * mesma chave de idempotência gravada em paralelo viram RUN_ALREADY_OPEN; a
+   * transação de quem chamou é revertida inteira.
    */
   static async criarIntencao({
     client,
@@ -323,37 +334,32 @@ class GameRunModel {
     streamerId = null,
     usedChannelLife = false,
     usedSubLife = false,
-    idempotencyKey,
+    idempotencyKey = null,
     itemIds = []
   }) {
-    const id = randomUUID();
-    const idempotenciaJaConhecida = await buscarPorChaveIdempotencia(client, idempotencyKey);
-    if (idempotenciaJaConhecida) return idempotenciaJaConhecida;
-    const loadoutComItens = {
-      ...loadout,
-      itemIds
-    };
     const query = `
-      INSERT INTO game_runs (id, user_id, game_id, seed, sim_version, loadout, used_sub_life, input_log, result, expires_at, streamer_id, used_channel_life, status, idempotency_key)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'reserving', $13)
-      ON CONFLICT (idempotency_key) WHERE idempotency_key IS NOT NULL DO NOTHING
+      INSERT INTO game_runs (id, user_id, game_id, seed, sim_version, loadout, used_sub_life, expires_at, streamer_id, used_channel_life, status, idempotency_key)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'reserving', $11)
       RETURNING *`;
-    const { rows } = await client.query(query, [
-      id,
-      userId,
-      gameId,
-      seed,
-      simVersion,
-      JSON.stringify(loadoutComItens),
-      usedSubLife,
-      null,
-      null,
-      expiresAt,
-      streamerId,
-      usedChannelLife,
-      idempotencyKey
-    ]);
-    return rows[0] ? normalizar(rows[0]) : null;
+    try {
+      const { rows } = await client.query(query, [
+        randomUUID(),
+        userId,
+        gameId,
+        seed,
+        simVersion,
+        JSON.stringify({ ...loadout, itemIds }),
+        usedSubLife,
+        expiresAt,
+        streamerId,
+        usedChannelLife,
+        idempotencyKey
+      ]);
+      return normalizar(rows[0]);
+    } catch (err) {
+      if (err.code === '23505') throw new Error('RUN_ALREADY_OPEN', { cause: err });
+      throw err;
+    }
   }
 
   /**
@@ -384,23 +390,23 @@ class GameRunModel {
   }
 
   /**
-   * Abandona UMA intenção 'reserving' específica (por id). Usada na
-   * compensação pós-commit: a geração falhou depois do COMMIT e a intenção
-   * precisa ser fechada sem devolver recursos de outras intenções.
+   * Abandona UMA intenção ainda em 'reserving'. Devolve a linha só para quem de
+   * fato fez a transição: compensação da abertura e recuperação de órfãs podem
+   * disputar a mesma intenção, e apenas quem recebe a linha estorna os recursos
+   * — senão vida e itens voltariam duas vezes.
+   *
+   * @param {string} runId
+   * @param {any} [client] transação em que o estorno também acontece
    */
-  static async abandonarIntencao(runId) {
+  static async abandonarIntencao(runId, client = null) {
     if (db.isAvailable()) {
-      try {
-        const { rows } = await db.query(
-          `UPDATE game_runs SET status = 'abandoned', finished_at = NOW()
-           WHERE id = $1 AND status = 'reserving'
-           RETURNING *`,
-          [runId]
-        );
-        return rows[0] ? normalizar(rows[0]) : null;
-      } catch (err) {
-        db.fallbackOrThrow(err, 'GameRunModel.abandonarIntencao');
-      }
+      const { rows } = await (client || db).query(
+        `UPDATE game_runs SET status = 'abandoned', finished_at = NOW()
+         WHERE id = $1 AND status = 'reserving'
+         RETURNING *`,
+        [runId]
+      );
+      return normalizar(rows[0]);
     }
     const r = InMemoryStore.gameRuns.find((x) => x.id === runId);
     if (!r || r.status !== 'reserving') return null;
@@ -410,34 +416,33 @@ class GameRunModel {
   }
 
   /**
-   * Intenções 'reserving' órfãs (processo caiu logo após criar a intenção):
-   * devolve os recursos e marca como abandonadas. Chamada na inicialização e
-   * periodicamente.
+   * Intenções 'reserving' mais velhas que `maxAgeMs` (processo caiu entre o
+   * COMMIT da reserva e a confirmação). Só lista: cada uma é abandonada e
+   * estornada ao PRÓPRIO dono em GameRunService.recuperarOrfas.
+   *
+   * @param {{maxAgeMs?: number, userId?: string|null, limite?: number}} [opcoes]
+   * @returns {Promise<Array<{id: string, user_id: string}>>}
    */
-  static async abandonarReservingStale({ maxAgeMs = 60_000 } = {}) {
-    const limite = new Date(Date.now() - maxAgeMs).toISOString();
+  static async listarOrfas({ maxAgeMs, userId = null, limite = 100 } = {}) {
+    const corte = new Date(Date.now() - maxAgeMs);
     if (db.isAvailable()) {
-      try {
-        const { rows } = await db.query(
-          `UPDATE game_runs SET status = 'abandoned', finished_at = NOW()
-           WHERE status = 'reserving' AND created_at < $1
-           RETURNING *`,
-          [limite]
-        );
-        return rows.map(normalizar);
-      } catch (err) {
-        db.fallbackOrThrow(err, 'GameRunModel.abandonarReservingStale');
-      }
+      const { rows } = await db.query(
+        `SELECT id, user_id FROM game_runs
+         WHERE status = 'reserving' AND created_at < $1 AND ($2::uuid IS NULL OR user_id = $2)
+         ORDER BY created_at LIMIT $3`,
+        [corte.toISOString(), userId, limite]
+      );
+      return rows;
     }
-    const agora = Date.now();
-    const stale = InMemoryStore.gameRuns.filter(
-      (r) => r.status === 'reserving' && Date.parse(r.created_at) < agora - maxAgeMs
-    );
-    stale.forEach((r) => {
-      r.status = 'abandoned';
-      r.finished_at = new Date().toISOString();
-    });
-    return stale.map(normalizar);
+    return InMemoryStore.gameRuns
+      .filter(
+        (r) =>
+          r.status === 'reserving' &&
+          Date.parse(r.created_at) < corte.getTime() &&
+          (!userId || r.user_id === userId)
+      )
+      .slice(0, limite)
+      .map((r) => ({ id: r.id, user_id: r.user_id }));
   }
 
   /**

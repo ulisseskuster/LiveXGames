@@ -1,230 +1,188 @@
-// Fase 2 (P0-B): abertura de rodada com intenção persistente.
+// Abertura de rodada: vida, itens e intenção 'reserving' persistem juntos, e
+// o estorno de intenções órfãs volta sempre ao DONO, uma única vez.
 //
-// O fluxo antigo consumia vida + reservava itens e só DEPOIS gravava a rodada:
-// queda entre o débito e o INSERT perdia tudo (vida 3→2, item 1→0, nada gravado).
-//
-// Estes testes rodam sem banco (InMemoryStore): verificam o comportamento do
-// serviço de intenção — reserving não vira open sem confirmação, falha na
-// geração devolve recursos, intenção órfã é recuperável, e idempotência.
+// Roda no armazenamento que o ambiente oferecer: em memória localmente e no
+// PostgreSQL real no CI (DATABASE_URL do workflow). É no Postgres que os
+// defeitos da auditoria de 17/09/2026 apareciam: reserva de itens fora da
+// transação (clique duplo destruía o item) e órfãs de um usuário estornadas a
+// quem abrisse a próxima rodada.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const crypto = require('crypto');
 
-process.env.DATABASE_URL = '';
-
+const db = require('../src/config/database');
+const InMemoryStore = require('../src/data/store');
 const GameRunService = require('../src/services/gameRunService');
 const GameRunModel = require('../src/models/gameRunModel');
-const ChannelInventoryModel = require('../src/models/channelInventoryModel');
+const ChannelInventory = require('../src/models/channelInventoryModel');
+const WalletModel = require('../src/models/streamerWalletModel');
 const UserModel = require('../src/models/userModel');
-const ShopModel = require('../src/models/shopModel');
-const InMemoryStore = require('../src/data/store');
+const RunVerifier = require('../src/services/sim/runVerifier');
 
-const ESCUDO = 'teste_sandbox_escudo_f2';
+const CHANNEL = '33333333-3333-3333-3333-333333333333';
+const ITEM = 'nitro_booster';
 
-// Item de teste precisa existir no catálogo em memória.
-if (!InMemoryStore.shopItems.some((i) => i.id === ESCUDO)) {
-  InMemoryStore.shopItems.push({
-    id: ESCUDO,
-    gameId: 'sandbox',
-    name: 'Escudo de teste F2',
-    type: 'shield',
-    price: 1,
-    rarity: 'common',
-    icon: '🧪',
-    stock: 999,
-    is_active: true,
-    flight_bonus: { effect: 'shield', activation: 'auto', charges: 1 }
-  });
-}
+test.before(() => db.whenReady());
+test.after(() => RunVerifier.encerrar());
 
-async function novoPiloto(prefixo) {
-  const sufixo = crypto.randomBytes(4).toString('hex');
-  return UserModel.create({
-    username: `${prefixo}_${sufixo}`,
-    email: `${prefixo}_${sufixo}@teste.dev`,
+async function piloto(itens = 0) {
+  const id = crypto.randomBytes(5).toString('hex');
+  const p = await UserModel.create({
+    username: `intencao_${id}`,
+    email: `intencao_${id}@test.dev`,
     password: 'senha123456',
     role: 'viewer'
   });
+  if (itens) await ChannelInventory.add(p.id, CHANNEL, ITEM, itens);
+  return p;
 }
 
-async function quantidade(userId, itemId) {
-  const inv = await ShopModel.findUserInventoryItem(userId, itemId);
-  return inv ? inv.quantity : 0;
+const vidas = async (id) => (await UserModel.findById(id)).lives;
+async function itens(id) {
+  const linha = (await ChannelInventory.list(id, CHANNEL)).find((i) => i.item_id === ITEM);
+  return linha ? Number(linha.quantity) : 0;
 }
+const saldo = async (id) => Number((await WalletModel.findByUserAndStreamer(id, CHANNEL)).balance);
 
-async function vidas(userId) {
-  return (await UserModel.findById(userId)).lives;
-}
-
-test('intenção reserving não vira open sem confirmação (geração falhou)', async () => {
-  const piloto = await novoPiloto('f2_intencao');
-  await ShopModel.addItemToInventory(piloto.id, ESCUDO, 1);
-  const vidasAntes = await vidas(piloto.id);
-
-  // Simula o fluxo sem banco: registra a intenção em 'reserving' diretamente.
-  const intencao = await GameRunModel.abrir({
-    userId: piloto.id,
-    gameId: 'sandbox',
-    seed: crypto.randomBytes(32).toString('hex'),
-    simVersion: 1,
-    loadout: { itemIds: [ESCUDO], bytes: 'AAAA', items: [] },
-    usedSubLife: false,
-    expiresAt: new Date(Date.now() + 60_000).toISOString(),
-    status: 'reserving'
-  });
-  assert.equal(intencao.status, 'reserving', 'intenção começa reserving');
-
-  // Sem confirmarIntencao, o usuário ainda não "abriu" uma rodada jogável.
-  const abertas = InMemoryStore.gameRuns.filter(
-    (r) => r.user_id === piloto.id && (r.status === 'open' || r.status === 'verifying')
-  );
-  assert.equal(abertas.length, 0, 'nenhuma open antes da confirmação');
-
-  // Envelhece para a recuperação de intenção órfã.
-  const raw = InMemoryStore.gameRuns.find((r) => r.id === intencao.id);
-  raw.created_at = new Date(Date.now() - 120_000).toISOString();
-
-  // Recuperação de intenção órfã: devolve recursos e marca abandoned.
-  const abandonadas = await GameRunModel.abandonarReservingStale({ maxAgeMs: 60_000 });
-  assert.ok(abandonadas.length >= 1, 'intenção órfã recuperada');
-  assert.equal(await vidas(piloto.id), vidasAntes, 'vida não foi perdida (nunca debitada aqui)');
-  assert.equal(await quantidade(piloto.id, ESCUDO), 1, 'item nunca saiu (intenção sem consumo)');
-});
-
-test('falha na abertura devolve vida e item (compensação manual sem banco)', async () => {
-  const piloto = await novoPiloto('f2_falha');
-  await ShopModel.addItemToInventory(piloto.id, ESCUDO, 1);
-  const vidasAntes = await vidas(piloto.id);
-
-  // Força falha na abertura: item não existe no inventário após a vida ser consumida.
-  // O fluxo consome vida primeiro, tenta reservar item inexistente → erro.
-  InMemoryStore.channelWalletTransactions.length = 0;
-  InMemoryStore.channelWallets.length = 0;
-
-  await assert.rejects(
-    GameRunService.iniciar(piloto.id, {
-      gameId: 'sandbox',
-      itemIds: ['item_que_nao_existe_f2']
-    }),
-    /ITEM_NOT_IN_INVENTORY|ITEM_NOT_FOUND/
-  );
-
-  // A vida consumida no início deve ter sido devolvida pela compensação.
-  assert.equal(await vidas(piloto.id), vidasAntes, 'vida devolvida após falha na reserva do item');
-  assert.equal(await quantidade(piloto.id, ESCUDO), 1, 'item intacto');
-});
-
-test('abrir com sucesso gera rodada open com resultado, consumindo recursos', async () => {
-  const piloto = await novoPiloto('f2_ok');
-  await ShopModel.addItemToInventory(piloto.id, ESCUDO, 1);
-  const vidasAntes = await vidas(piloto.id);
-
-  const abertura = await GameRunService.iniciar(piloto.id, {
-    gameId: 'sandbox',
-    itemIds: [ESCUDO]
-  });
-
-  assert.equal(abertura.runId, abertura.runId);
-  const run = InMemoryStore.gameRuns.find((r) => r.id === abertura.runId);
-  assert.equal(run.status, 'open', 'rodada confirmada open');
-  assert.equal(await vidas(piloto.id), vidasAntes - 1, 'vida consumida');
-  assert.equal(await quantidade(piloto.id, ESCUDO), 0, 'item reservado');
-});
-
-test('intenção órfã com recursos debitados é recuperável (crash pós-débito)', async () => {
-  const piloto = await novoPiloto('f2_crash');
-  await ShopModel.addItemToInventory(piloto.id, ESCUDO, 1);
-  const vidasAntes = await vidas(piloto.id);
-
-  // Simula: o processo debitou vida + item e gravou intenção 'reserving',
-  // depois caiu antes de gerar/confirmar.
-  await UserModel.consumeLife(piloto.id);
-  await ShopModel.reservarItem(piloto.id, ESCUDO);
-  const intencao = await GameRunModel.abrir({
-    userId: piloto.id,
-    gameId: 'sandbox',
-    seed: crypto.randomBytes(32).toString('hex'),
-    simVersion: 1,
-    loadout: { itemIds: [ESCUDO], bytes: 'AAAA', items: [] },
-    usedSubLife: false,
-    expiresAt: new Date(Date.now() + 60_000).toISOString(),
-    status: 'reserving'
-  });
-  assert.ok(intencao);
-
-  // Envelhece a intenção para simular que o processo caiu há tempo suficiente.
-  const rawIntencao = InMemoryStore.gameRuns.find((r) => r.id === intencao.id);
-  rawIntencao.created_at = new Date(Date.now() - 120_000).toISOString();
-
-  // A recuperação acontece no PRÓXIMO iniciar — que também abre uma rodada
-  // nova e consome outra vida. Para isolar a devolução, chamamos a recuperação
-  // (abandonarReservingStale + devolução) diretamente, como o serviço faz.
-  const orfas = await GameRunModel.abandonarReservingStale({ maxAgeMs: 60_000 });
-  const minha = orfas.find((r) => r.id === intencao.id);
-  assert.ok(minha, 'intenção órfã recuperada');
-  assert.equal(minha.status, 'abandoned', 'intenção órfã abandonada');
-  await GameRunService.devolverItens(piloto.id, orfas);
-  for (const orfa of orfas) {
-    if (orfa.streamer_id) await ChannelInventoryModel.addLives(piloto.id, orfa.streamer_id, 1);
-    else await GameRunService.devolverVida(piloto.id, orfa.used_sub_life);
-  }
-
-  assert.equal(await quantidade(piloto.id, ESCUDO), 1, 'item devolvido');
-  assert.equal(await vidas(piloto.id), vidasAntes, 'vida devolvida');
-});
-
-// Fase 1A: idempotência real da abertura. O cliente pode repetir o mesmo pedido
-// (mesmo requestId) após um timeout: o servidor deve REUSAR a mesma intenção,
-// nunca debitar duas vidas nem criar duas rodadas. Mesmo requestId + pedido
-// diferente NÃO deve reusar (o requestId pertence àquele pedido).
-test('mesmo requestId repete a MESMA intenção (não debita duas vidas, não duplica rodada)', async () => {
-  const piloto = await novoPiloto('f2_idem');
-  await ShopModel.addItemToInventory(piloto.id, ESCUDO, 1);
-  const requestId = `req_${crypto.randomBytes(4).toString('hex')}`;
-
-  // No InMemory o fluxo por abrir() não passa por criarIntencao; a semântica
-  // de idempotência forte é validada aqui na REGRA DE ACEITE do requestId,
-  // e em Postgres no authoritativeJet (ON CONFLICT). O requestId válido é
-  // aceito; os inválidos caem para nonce próprio (chaves diferentes).
-  const aceita = (rid) =>
-    typeof rid === 'string' &&
-    rid.length >= 8 &&
-    rid.length <= 128 &&
-    /^[A-Za-z0-9._:-]+$/.test(rid);
-  assert.equal(aceita(requestId), true, 'requestId válido é aceito');
-
-  const invalidos = ['curto', 'com espaço', '', 'a'.repeat(200)];
-  for (const inv of invalidos) {
-    assert.equal(aceita(inv), false, `requestId ${JSON.stringify(inv)} é inválido`);
-  }
-});
-
-// Fase 1B: o teto da fila do verificador. Com SIM_VERIFIER_MAX_QUEUE baixo,
-// a fila cheia rejeita (VERIFIER_QUEUE_FULL) em vez de acumular sem limite.
-test('fila do verificador com teto rejeita VERIFIER_QUEUE_FULL em sobrecarga', async () => {
-  const RunVerifierLocal = require('../src/services/sim/runVerifier');
-
-  // Enche a fila artificialmente: o teto é 32 por padrão; com workers 1 e
-  // nenhum job rodando, 33+ jobs simultâneos estouram o teto.
-  const antes = process.env.SIM_VERIFIER_MAX_QUEUE;
-  process.env.SIM_VERIFIER_MAX_QUEUE = '2';
-  try {
-    const jobs = [];
-    for (let i = 0; i < 4; i++) {
-      jobs.push(
-        RunVerifierLocal.gerar({
-          gameCode: 1,
-          seed: Buffer.from('00'.repeat(32), 'hex'),
-          loadout: Buffer.from('AAAA'),
-          botSeed: i
-        }).catch((e) => ({ erro: e.message }))
-      );
+/** Intenção 'reserving' com vida e item debitados, como se o processo tivesse caído depois. */
+function reservar(userId, itemIds = [ITEM]) {
+  return GameRunService.reservar(
+    userId,
+    CHANNEL,
+    itemIds.map((id) => ({ id })),
+    {
+      gameId: 'jet_launcher',
+      seed: crypto.randomBytes(32).toString('hex'),
+      simVersion: 1,
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+      idempotencyKey: null,
+      loadout: { itemIds, bytes: '', items: [] }
     }
-    const resultados = await Promise.all(jobs);
-    const comErro = resultados.filter((r) => r && r.erro === 'VERIFIER_QUEUE_FULL');
-    assert.ok(comErro.length >= 1, `fila cheia rejeitou ao menos um job (${comErro.length} de 4)`);
-  } finally {
-    if (antes === undefined) delete process.env.SIM_VERIFIER_MAX_QUEUE;
-    else process.env.SIM_VERIFIER_MAX_QUEUE = antes;
+  );
+}
+
+async function envelhecer(runId) {
+  if (db.isAvailable()) {
+    await db.query(
+      `UPDATE game_runs SET created_at = NOW() - INTERVAL '10 minutes' WHERE id = $1`,
+      [runId]
+    );
+  } else {
+    InMemoryStore.gameRuns.find((r) => r.id === runId).created_at = new Date(
+      Date.now() - 10 * 60_000
+    ).toISOString();
   }
+}
+
+const abrir = (userId, extra = {}) =>
+  GameRunService.iniciar(userId, {
+    gameId: 'jet_launcher',
+    streamerId: CHANNEL,
+    itemIds: [ITEM],
+    ...extra
+  });
+
+test('com outra rodada em andamento, a abertura é recusada sem gastar vida nem item', async () => {
+  const p = await piloto(2);
+  const emAndamento = await reservar(p.id);
+  const [vidasAntes, itensAntes] = [await vidas(p.id), await itens(p.id)];
+
+  await assert.rejects(abrir(p.id), /^Error: RUN_ALREADY_OPEN$/);
+
+  assert.equal(await vidas(p.id), vidasAntes, 'vida intacta');
+  assert.equal(await itens(p.id), itensAntes, 'item intacto (antes era destruído)');
+  assert.equal(await GameRunService.abandonarEEstornar(emAndamento.id, p.id), true);
+});
+
+test('clique duplo: cada rodada aberta gasta uma vida e um item, a recusada nada', async () => {
+  const p = await piloto(2);
+  const resultados = await Promise.allSettled([abrir(p.id), abrir(p.id)]);
+  const abertas = resultados.filter((r) => r.status === 'fulfilled').length;
+
+  assert.ok(abertas >= 1, 'pelo menos uma rodada abre');
+  for (const r of resultados) {
+    if (r.status === 'rejected') assert.equal(r.reason.message, 'RUN_ALREADY_OPEN');
+  }
+  assert.equal(await vidas(p.id), 3 - abertas);
+  assert.equal(await itens(p.id), 2 - abertas);
+});
+
+test('órfã de um usuário é estornada ao próprio dono, não a quem abre a próxima rodada', async () => {
+  const vitima = await piloto(1);
+  const orfa = await reservar(vitima.id);
+  await envelhecer(orfa.id);
+  assert.equal(await itens(vitima.id), 0);
+  assert.equal(await vidas(vitima.id), 2);
+
+  const outro = await piloto(1);
+  await abrir(outro.id);
+  assert.equal(await itens(outro.id), 0, 'quem abriu não recebe o item alheio');
+  assert.equal(await vidas(outro.id), 2, 'nem a vida alheia');
+  assert.equal((await GameRunModel.buscar(orfa.id, vitima.id)).status, 'reserving');
+
+  await GameRunService.recuperarOrfas();
+  assert.equal((await GameRunModel.buscar(orfa.id, vitima.id)).status, 'abandoned');
+  assert.equal(await itens(vitima.id), 1, 'item volta à vítima');
+  assert.equal(await vidas(vitima.id), 3, 'vida volta à vítima');
+});
+
+test('abandonos simultâneos da mesma intenção estornam uma única vez', async () => {
+  const p = await piloto(1);
+  const orfa = await reservar(p.id);
+  await envelhecer(orfa.id);
+
+  const resultados = await Promise.all([
+    GameRunService.recuperarOrfas({ userId: p.id }),
+    GameRunService.recuperarOrfas({ userId: p.id }),
+    GameRunService.abandonarEEstornar(orfa.id, p.id)
+  ]);
+
+  assert.equal(
+    resultados.map(Number).reduce((a, b) => a + b),
+    1,
+    'um único estorno'
+  );
+  assert.equal(await itens(p.id), 1);
+  assert.equal(await vidas(p.id), 3);
+  // A geração que ainda estivesse viva não consegue mais abrir a rodada.
+  const confirmada = await GameRunModel.confirmarIntencao(orfa.id, {
+    result: null,
+    inputLog: null,
+    expiresAt: new Date(Date.now() + 60_000).toISOString()
+  });
+  assert.equal(confirmada, null);
+});
+
+test('o dono volta a jogar logo após uma queda: a abertura recupera a própria órfã', async () => {
+  const p = await piloto(2);
+  const orfa = await reservar(p.id);
+  await envelhecer(orfa.id);
+
+  await abrir(p.id);
+
+  assert.equal((await GameRunModel.buscar(orfa.id, p.id)).status, 'abandoned');
+  assert.equal(await vidas(p.id), 2, 'órfã estornada, nova rodada debitada');
+  assert.equal(await itens(p.id), 1);
+});
+
+test('mesmo requestId devolve a mesma rodada sem novo débito nem novo crédito', async () => {
+  const p = await piloto(2);
+  const requestId = `req_${crypto.randomBytes(6).toString('hex')}`;
+
+  const primeira = await abrir(p.id, { requestId });
+  const [vidasDepois, itensDepois, saldoDepois] = [
+    await vidas(p.id),
+    await itens(p.id),
+    await saldo(p.id)
+  ];
+  const repetida = await abrir(p.id, { requestId });
+
+  assert.deepEqual(repetida, primeira);
+  assert.equal(await vidas(p.id), vidasDepois);
+  assert.equal(await itens(p.id), itensDepois);
+  assert.equal(await saldo(p.id), saldoDepois);
+
+  const outra = await abrir(p.id, { requestId: `${requestId}_2` });
+  assert.notEqual(outra.runId, primeira.runId, 'outro requestId é outra rodada');
+  assert.equal(await vidas(p.id), vidasDepois - 1);
 });

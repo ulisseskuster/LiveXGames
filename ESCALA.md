@@ -5,7 +5,7 @@
 Avaliação em 14/09/2026, commit `98b7ee6`. O fluxo normal tem cobertura funcional, mas há falhas reproduzidas de recuperação de dados e requisitos ausentes para operar várias instâncias. Aprovação de testes funcionais não constitui medição de capacidade.
 
 > **Atualização em 15/09/2026 — os bloqueios P0 foram corrigidos e validados no CI real (PostgreSQL).**
-> Resolvidos: doação atômica (P0-A), abertura recuperável com intenção `reserving` e idempotência (P0-B), revogação de sessão (`token_version`), Web Push ligado às conquistas, readiness honesta (`/health` 503 sem schema), encerramento controlado (SIGTERM/SIGINT) e deadlock 40P01 de liquidações concorrentes. Falta o P1-C (eventos entre instâncias) e a validação de carga e operação.
+> Resolvidos: doação atômica (P0-A), abertura recuperável com intenção `reserving` e idempotência (P0-B, revisto em 17/09 — ver abaixo), revogação de sessão (`token_version`), Web Push ligado às conquistas, readiness honesta (`/health` 503 sem schema), encerramento controlado (SIGTERM/SIGINT) e deadlock 40P01 de liquidações concorrentes. Falta o P1-C (eventos entre instâncias) e a validação de carga e operação.
 
 ## Fluxo avaliado
 
@@ -28,18 +28,18 @@ flowchart LR
 
 Os intervalos **F → H** e **M → N** permitem perda persistente de direitos do usuário em caso de falha. Foram exercitados em PostgreSQL local descartável, sem modificar dados de produção.
 
-| Parte do fluxo | Avaliação |
-| --- | --- |
-| Cadastro, login e navegação | Testes funcionais passaram; tokens emitidos não possuem revogação antecipada |
-| OAuth Twitch/Kick | Estado normalmente compartilhado no PostgreSQL; falha de gravação ainda permite fallback local |
-| Separação de moedas e inventário por canal | Validada em testes de integração |
-| Compra e resgate de brindes | Débito/estoque com transações e testes concorrentes; bom ponto de partida |
-| Abertura da rodada | Bloqueada por consumo anterior ao registro persistente |
-| Liquidação de rodada já salva | Transacional, com recibo idempotente; testes passaram |
-| Recebimento da doação | Bloqueado por registro e crédito não atômicos |
-| Chat, saldo e eventos ao vivo | Falta compartilhamento de eventos entre instâncias |
-| Notificações e conquistas | Central básica validada; envio Web Push e quatro conquistas de streamer incompletos |
-| Deploy e operação | Readiness, recuperação, monitoramento e capacidade ainda precisam de validação |
+| Parte do fluxo                             | Avaliação                                                                                      |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| Cadastro, login e navegação                | Testes funcionais passaram; tokens emitidos não possuem revogação antecipada                   |
+| OAuth Twitch/Kick                          | Estado normalmente compartilhado no PostgreSQL; falha de gravação ainda permite fallback local |
+| Separação de moedas e inventário por canal | Validada em testes de integração                                                               |
+| Compra e resgate de brindes                | Débito/estoque com transações e testes concorrentes; bom ponto de partida                      |
+| Abertura da rodada                         | Bloqueada por consumo anterior ao registro persistente                                         |
+| Liquidação de rodada já salva              | Transacional, com recibo idempotente; testes passaram                                          |
+| Recebimento da doação                      | Bloqueado por registro e crédito não atômicos                                                  |
+| Chat, saldo e eventos ao vivo              | Falta compartilhamento de eventos entre instâncias                                             |
+| Notificações e conquistas                  | Central básica validada; envio Web Push e quatro conquistas de streamer incompletos            |
+| Deploy e operação                          | Readiness, recuperação, monitoramento e capacidade ainda precisam de validação                 |
 
 ## Bloqueios prioritários
 
@@ -49,7 +49,7 @@ Os intervalos **F → H** e **M → N** permitem perda persistente de direitos d
 
 ### P0 — Queda durante abertura perde vida e item
 
-**✅ RESOLVIDO em 15/09/2026 (migração 028 + commit `26cc53c`).** `backend/src/services/gameRunService.js` agora registra a intenção da rodada em `reserving` ANTES de consumir recursos, com `idempotency_key` única; a geração fica fora da transação longa; falha/crash deixa intenção órfã recuperável (devolve vida e itens), e a liquidação é transacional com recibo idempotente. Coberto por `gameRunIntention.test.js` (6 testes) e validado no CI.
+**✅ RESOLVIDO em 17/09/2026 (Fase 1 do plano em [AUDITORIA.md](AUDITORIA.md)).** A versão de 15/09 (migração 028) ainda falhava em dois pontos, ambos reproduzidos no PostgreSQL: a vida e os itens eram debitados fora da transação da intenção (um clique duplo destruía o item), e as intenções órfãs eram estornadas a quem abrisse a próxima rodada, não ao dono. Agora `GameRunService.reservar` grava vida, itens e intenção numa única transação com lock consultivo por usuário; `abandonarEEstornar` devolve uma única vez e sempre ao dono; `recuperarOrfas` roda no boot, a cada minuto e na abertura do próprio usuário; o cliente envia `requestId`, e repetir o pedido devolve a mesma rodada sem novo débito. Coberto por `gameRunIntention.test.js` no PostgreSQL do CI.
 
 ### P1 — Eventos não atravessam instâncias
 

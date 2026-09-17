@@ -32,6 +32,13 @@ const { comercializavel } = require('./gameCatalog');
 
 /** Pausa, aba em segundo plano, rede lenta: margem além da duração máxima. */
 const MARGEM_EXPIRACAO_MS = 15 * 60 * 1000;
+/**
+ * Idade a partir da qual uma intenção 'reserving' é considerada órfã. Uma
+ * geração normal leva milissegundos; o limiar cobre fila cheia do verificador.
+ * Abandonar uma geração ainda viva é seguro: a confirmação dela falha e o
+ * estorno acontece uma única vez (ver abandonarEEstornar).
+ */
+const LIMIAR_ORFA_MS = 2 * 60 * 1000;
 /** Um log real de 120 s fica em poucos KB; 64 KB é folga, não meta. */
 const MAX_LOG_BYTES = 64 * 1024;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -116,28 +123,13 @@ class GameRunService {
     await this.recuperarGeradas(userId, io);
     const anteriores = await GameRunModel.abandonarAbertas(userId);
     await this.devolverItens(userId, anteriores);
-    // Intenções 'reserving' órfãs (processo caiu entre debitar e gerar):
-    // devolve vida e itens antes de qualquer nova abertura.
-    const orfas = await GameRunModel.abandonarReservingStale().catch(() => []);
-    if (orfas.length) {
-      await this.devolverItens(userId, orfas);
-      for (const orfa of orfas) {
-        if (orfa.streamer_id) await ChannelInventory.addLives(userId, orfa.streamer_id, 1);
-        else await this.devolverVida(userId, orfa.used_sub_life);
-      }
-    }
+    // Intenção deste usuário presa em 'reserving' ocupa o índice único de
+    // "uma rodada por vez": sem isto, ele só voltaria a jogar depois do job.
+    await this.recuperarOrfas({ userId });
 
-    // ─── Fase 2 (P0-B): intenção persistente ANTES de consumir recursos ───
-    // O fluxo antigo consumia vida + reservava itens e só DEPOIS gravava a
-    // rodada: queda no meio perdia tudo. Agora a intenção (status 'reserving')
-    // é gravada NA MESMA TRANSAÇÃO que debita vida e reserva itens. Se o
-    // processo cair, sobra a intenção órfã → recuperação devolve os recursos.
-    //
-    // Chave de idempotência: usa o requestId que o cliente enviar, se vier
-    // (repetir o mesmo pedido com o mesmo requestId reusa a MESMA intenção),
-    // senão deriva de um nonce forte próprio desta chamada. Antes a chave
-    // usava Date.now(): duas aberturas no mesmo milissegundo colidiam e uma
-    // repetição legítima do mesmo pedido virava DUAS rodadas.
+    // Repetir o MESMO pedido (mesmo requestId, ex.: nova tentativa após timeout
+    // de rede) devolve a mesma rodada ANTES de qualquer débito. Sem requestId,
+    // cada chamada é uma rodada nova.
     const requestIdValido =
       typeof requestId === 'string' &&
       requestId.length >= 8 &&
@@ -145,99 +137,48 @@ class GameRunService {
       /^[A-Za-z0-9._:-]+$/.test(requestId);
     const idempotencyKey = requestIdValido
       ? crypto.createHash('sha256').update(`${userId}:${gameIdValido}:${requestId}`).digest('hex')
-      : crypto
-          .createHash('sha256')
-          .update(
-            `${userId}:${gameIdValido}:${JSON.stringify(ids)}:${crypto.randomBytes(16).toString('hex')}`
-          )
-          .digest('hex');
+      : null;
+    if (idempotencyKey) {
+      const existente = await GameRunModel.buscarPorIdempotencia(userId, idempotencyKey);
+      if (existente) return this.reabrir(userId, existente, io);
+    }
 
-    const channelLife = canal ? await ChannelInventory.consumeLife(userId, canal) : false;
-    const vida = channelLife ? { usouDourada: false } : await UserModel.consumeLife(userId);
-    if (!vida) throw new Error('NO_LIVES_REMAINING');
-    const vidaUsouDourada = Boolean(vida && vida.usouDourada);
+    const autoritativa = JOGOS_AUTORITATIVOS.has(gameIdValido);
+    const duracaoMs = (jogo.maxTicks / 60) * 1000;
+    const nonce = crypto.randomBytes(16).toString('hex');
+    const seed = autoritativa
+      ? sementeDaRodada(userId, gameIdValido, nonce)
+      : crypto.randomBytes(32).toString('hex');
+    const botSeed = autoritativa ? parseInt(seed.slice(0, 8), 16) : crypto.randomInt(0, 0xffffffff);
+    const compromisso = compromissoDaPartida(seed, botSeed);
+    const bonus = bonusDosItens(itens);
+    const scoreMultiplier = Math.round(bonus.multiplier * subscriberMultiplier * 1e6) / 1e6;
+    const expiraEm = () => new Date(Date.now() + duracaoMs + MARGEM_EXPIRACAO_MS).toISOString();
 
-    const reservados = [];
-    let abertura;
-    let intencao = null;
-    const transacional = db.isAvailable();
-    const client = transacional ? await db.connect() : null;
-    let commitou = false;
-    try {
-      if (client) await client.query('BEGIN');
-      // Reserva vida e itens dentro da transação (mesmo client)…
-      for (const item of itens) {
-        const reservou = canal
-          ? await ChannelInventory.reserve(userId, canal, item.id)
-          : await ShopModel.reservarItem(userId, item.id);
-        if (!reservou) throw new Error(`ITEM_NOT_IN_INVENTORY:${item.id}`);
-        reservados.push(item.id);
-      }
-
-      const duracaoMs = (jogo.maxTicks / 60) * 1000;
-      const autoritativa = JOGOS_AUTORITATIVOS.has(gameIdValido);
-      const nonce = crypto.randomBytes(16).toString('hex');
-      const seed = autoritativa
-        ? sementeDaRodada(userId, gameIdValido, nonce)
-        : crypto.randomBytes(32).toString('hex');
-      const botSeed = autoritativa
-        ? parseInt(seed.slice(0, 8), 16)
-        : crypto.randomInt(0, 0xffffffff);
-      const compromisso = compromissoDaPartida(seed, botSeed);
-      const bonus = bonusDosItens(itens);
-      const scoreMultiplier = Math.round(bonus.multiplier * subscriberMultiplier * 1e6) / 1e6;
-
-      // Loadout persistido: bytes (base64) + itemIds + descrição dos itens.
-      // É este objeto que a verificação do replay usa (run.loadout.bytes).
-      const loadoutPersistido = {
-        itemIds: reservados,
+    // Vida, itens e intenção persistem juntos (ou nada persiste). A geração
+    // fica fora da transação: não se segura lock enquanto o worker simula.
+    const intencao = await this.reservar(userId, canal, itens, {
+      gameId: gameIdValido,
+      seed,
+      simVersion: manifesto.simVersion,
+      expiresAt: expiraEm(),
+      idempotencyKey,
+      // Loadout persistido: é o que a verificação do replay usa (loadout.bytes).
+      loadout: {
+        itemIds: itens.map((i) => i.id),
         bytes: loadout.toString('base64'),
         items: itens.map((i) => ({
           id: i.id,
           name: i.name,
           effect: i.flight_bonus.effect,
-          activation: 'automatic',
-          charges: 1
+          activation: i.flight_bonus.activation,
+          charges: i.flight_bonus.charges ?? 1
         }))
-      };
-
-      // …e a INTENÇÃO da rodada, tudo ou nada. O seed/sorteio ainda é gerado
-      // depois, fora da transação longa.
-      if (client) {
-        intencao = await GameRunModel.criarIntencao({
-          client,
-          userId,
-          gameId: gameIdValido,
-          seed,
-          simVersion: manifesto.simVersion,
-          loadout: loadoutPersistido,
-          expiresAt: new Date(Date.now() + duracaoMs + MARGEM_EXPIRACAO_MS).toISOString(),
-          streamerId: canal,
-          usedChannelLife: channelLife,
-          usedSubLife: vidaUsouDourada,
-          idempotencyKey,
-          itemIds: reservados
-        });
-        if (!intencao) throw new Error('RUN_ALREADY_OPEN');
-        await client.query('COMMIT');
-        commitou = true;
-      } else {
-        // Sem banco (InMemory): mesma semântica aproximada, sem transação real.
-        intencao = await GameRunModel.abrir({
-          userId,
-          streamerId: canal,
-          usedChannelLife: channelLife,
-          gameId: gameIdValido,
-          seed,
-          simVersion: manifesto.simVersion,
-          loadout: loadoutPersistido,
-          usedSubLife: vidaUsouDourada,
-          expiresAt: new Date(Date.now() + duracaoMs + MARGEM_EXPIRACAO_MS).toISOString(),
-          status: 'reserving'
-        });
       }
+    });
 
-      // ── Geração da simulação FORA da transação longa ──
+    let abertura;
+    try {
       // O resultado inteiro existe ANTES de responder ao clique. Reveal é
       // somente leitura; nenhum comando, hash ou log do navegador participa.
       const gerada = autoritativa
@@ -279,74 +220,20 @@ class GameRunService {
           }
         : null;
 
-      // Transiciona reserving → open com o resultado já gerado (condicional).
+      // reserving → open, condicional: se a recuperação de órfãs já abandonou
+      // esta intenção (e estornou), a rodada não pode mais abrir.
       const run = await GameRunModel.confirmarIntencao(intencao.id, {
         result: resultGerado,
         inputLog: gerada ? Buffer.from(gerada.log) : null,
-        expiresAt: new Date(Date.now() + duracaoMs + MARGEM_EXPIRACAO_MS).toISOString()
+        expiresAt: expiraEm()
       });
-      if (!run) throw new Error('RUN_ALREADY_OPEN');
-
-      abertura = {
-        runId: run.id,
-        streamerId: canal,
-        gameId,
-        gameCode: jogo.code,
-        seed: autoritativa ? null : run.seed,
-        simVersion: run.sim_version,
-        loadout: loadout.toString('base64'),
-        replayLog: null,
-        generatedResult: null,
-        commitment: autoritativa ? compromisso : null,
-        items: itens.map((i) => ({
-          id: i.id,
-          name: i.name,
-          effect: i.flight_bonus.effect,
-          activation: i.flight_bonus.activation,
-          charges: i.flight_bonus.charges ?? 1
-        })),
-        maxTicks: jogo.maxTicks,
-        expiresAt: run.expires_at
-      };
+      if (!run) throw new Error('RUN_ABANDONED');
+      abertura = this.aberturaDaRodada(run);
     } catch (err) {
-      if (client && commitou) {
-        // O COMMIT já passou: a intenção e o débito de recursos persistiram.
-        // ROLLBACK não desfaz nada aqui — é preciso compensar manualmente:
-        // abandonar a intenção órfã, devolver vida e devolver itens reservados.
-        await GameRunModel.abandonarIntencao(intencao.id).catch(() => {});
-        for (const id of reservados) {
-          if (canal) await ChannelInventory.add(userId, canal, id, 1);
-          else await ShopModel.addItemToInventory(userId, id, 1);
-        }
-        if (channelLife) await ChannelInventory.addLives(userId, canal, 1);
-        else await this.devolverVida(userId, vidaUsouDourada);
-      } else if (client) {
-        // Falha ANTES do COMMIT: o ROLLBACK desfaz tudo (débito de itens na
-        // transação + intenção). A vida foi debitada FORA da transação (linha
-        // 137) e precisa voltar manualmente.
-        await client.query('ROLLBACK').catch(() => {});
-        if (channelLife) await ChannelInventory.addLives(userId, canal, 1);
-        else await this.devolverVida(userId, vidaUsouDourada);
-      } else if (intencao) {
-        // Sem banco (InMemory): compensa manualmente o que foi debitado.
-        await GameRunModel.abandonarIntencao(intencao.id).catch(() => {});
-        for (const id of reservados) {
-          if (canal) await ChannelInventory.add(userId, canal, id, 1);
-          else await ShopModel.addItemToInventory(userId, id, 1);
-        }
-        if (channelLife) await ChannelInventory.addLives(userId, canal, 1);
-        else await this.devolverVida(userId, vidaUsouDourada);
-      } else {
-        for (const id of reservados) {
-          if (canal) await ChannelInventory.add(userId, canal, id, 1);
-          else await ShopModel.addItemToInventory(userId, id, 1);
-        }
-        if (channelLife) await ChannelInventory.addLives(userId, canal, 1);
-        else await this.devolverVida(userId, vidaUsouDourada);
-      }
+      // Só estorna se ESTA chamada abandonar a intenção: se a recuperação de
+      // órfãs chegou antes, ela já devolveu tudo.
+      await this.abandonarEEstornar(intencao.id, userId);
       throw err;
-    } finally {
-      if (client) client.release();
     }
     if (JOGOS_AUTORITATIVOS.has(gameIdValido)) {
       // A reprodução pode ser fechada, pulada ou nem chegar a abrir.
@@ -692,11 +579,174 @@ class GameRunService {
   }
 
   /** Streamer não gasta vida ao abrir, então também não recebe de volta. */
-  static async devolverVida(userId, usouDourada) {
+  static async devolverVida(userId, usouDourada, client = null) {
     const usuario = await UserModel.findById(userId);
     if (!usuario || usuario.role === 'streamer') return;
-    if (usouDourada) await UserModel.refundSubLife(userId);
-    else await UserModel.addExtraLife(userId);
+    if (usouDourada) await UserModel.refundSubLife(userId, client);
+    else await UserModel.addExtraLife(userId, {}, client);
+  }
+
+  /**
+   * Resposta de abertura a partir da rodada salva. Serve tanto para a rodada
+   * recém-aberta quanto para a repetição do mesmo pedido.
+   */
+  static aberturaDaRodada(run) {
+    const jogo = jogoPorId(run.game_id);
+    const autoritativa = JOGOS_AUTORITATIVOS.has(run.game_id);
+    return {
+      runId: run.id,
+      streamerId: run.streamer_id,
+      gameId: run.game_id,
+      gameCode: jogo?.code || 0,
+      seed: autoritativa ? null : run.seed,
+      simVersion: run.sim_version,
+      loadout: run.loadout.bytes,
+      replayLog: null,
+      generatedResult: null,
+      commitment: autoritativa ? run.result?.commitment || null : null,
+      items: run.loadout.items || [],
+      maxTicks: jogo?.maxTicks || 0,
+      expiresAt: run.expires_at
+    };
+  }
+
+  /** Repetição de um pedido já processado: devolve a mesma rodada, sem débito. */
+  static async reabrir(userId, run, io) {
+    if (run.status === 'reserving') throw new Error('RUN_ALREADY_OPEN');
+    if (run.status === 'open' && run.result?.serverGenerated) {
+      await this.liquidarGerada(userId, run, io);
+      return this.aberturaDaRodada(run);
+    }
+    if (run.status === 'open' || (run.status === 'verified' && run.result?.serverGenerated)) {
+      return this.aberturaDaRodada(run);
+    }
+    throw new Error('RUN_ALREADY_FINISHED');
+  }
+
+  /**
+   * Transação com o lock consultivo do usuário. É o mesmo lock de
+   * GameRunModel.liquidarGerada: tudo que mexe em vida, itens e rodadas de um
+   * usuário entra na mesma fila e trava as linhas sempre na mesma ordem. Sem
+   * ele, abertura e liquidação simultâneas (clique duplo) podem se bloquear em
+   * ordens opostas (channel_wallets × game_runs) → deadlock 40P01.
+   */
+  static async emTransacaoDoUsuario(userId, fn) {
+    const client = await db.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [userId]);
+      const resultado = await fn(client);
+      await client.query('COMMIT');
+      return resultado;
+    } catch (err) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Debita vida e itens e grava a intenção 'reserving' numa única transação.
+   * Qualquer recusa (sem vida, sem item, outra rodada aberta) reverte tudo.
+   */
+  static async reservar(userId, canal, itens, dados) {
+    if (!db.isAvailable()) return this.reservarNaMemoria(userId, canal, itens, dados);
+    return this.emTransacaoDoUsuario(userId, async (client) => {
+      const channelLife = canal ? await ChannelInventory.consumeLife(userId, canal, client) : false;
+      const vida = channelLife ? {} : await UserModel.consumeLife(userId, client);
+      if (!vida) throw new Error('NO_LIVES_REMAINING');
+      for (const item of itens) {
+        const reservou = canal
+          ? await ChannelInventory.reserve(userId, canal, item.id, client)
+          : await ShopModel.reservarItem(userId, item.id, client);
+        if (!reservou) throw new Error(`ITEM_NOT_IN_INVENTORY:${item.id}`);
+      }
+      return GameRunModel.criarIntencao({
+        ...dados,
+        client,
+        userId,
+        streamerId: canal,
+        usedChannelLife: channelLife,
+        usedSubLife: Boolean(vida.usouDourada),
+        itemIds: itens.map((i) => i.id)
+      });
+    });
+  }
+
+  /** Sem banco não há transação: estorna à mão o que já tinha sido debitado. */
+  static async reservarNaMemoria(userId, canal, itens, dados) {
+    const channelLife = canal ? await ChannelInventory.consumeLife(userId, canal) : false;
+    const vida = channelLife ? {} : await UserModel.consumeLife(userId);
+    if (!vida) throw new Error('NO_LIVES_REMAINING');
+    const debitado = {
+      user_id: userId,
+      streamer_id: canal,
+      used_channel_life: channelLife,
+      used_sub_life: Boolean(vida.usouDourada),
+      loadout: { itemIds: [] }
+    };
+    try {
+      for (const item of itens) {
+        const reservou = canal
+          ? await ChannelInventory.reserve(userId, canal, item.id)
+          : await ShopModel.reservarItem(userId, item.id);
+        if (!reservou) throw new Error(`ITEM_NOT_IN_INVENTORY:${item.id}`);
+        debitado.loadout.itemIds.push(item.id);
+      }
+      return await GameRunModel.abrir({
+        ...dados,
+        userId,
+        streamerId: canal,
+        usedChannelLife: channelLife,
+        usedSubLife: debitado.used_sub_life,
+        status: 'reserving'
+      });
+    } catch (err) {
+      await this.estornar(debitado);
+      throw err;
+    }
+  }
+
+  /** Devolve ao DONO da rodada a vida e os itens que ela reservou. */
+  static async estornar(run, client = null) {
+    const userId = run.user_id;
+    for (const id of run.loadout?.itemIds || []) {
+      if (run.streamer_id) await ChannelInventory.add(userId, run.streamer_id, id, 1, client);
+      else await ShopModel.addItemToInventory(userId, id, 1, client);
+    }
+    if (run.used_channel_life) await ChannelInventory.addLives(userId, run.streamer_id, 1, client);
+    else await this.devolverVida(userId, run.used_sub_life, client);
+  }
+
+  /**
+   * Abandona a intenção e estorna na mesma transação. Devolve false quando
+   * outra chamada já a tinha abandonado (ou ela já abriu): nada a estornar.
+   */
+  static async abandonarEEstornar(runId, userId) {
+    const abandonar = async (client) => {
+      const run = await GameRunModel.abandonarIntencao(runId, client);
+      if (run) await this.estornar(run, client);
+      return Boolean(run);
+    };
+    return db.isAvailable() ? this.emTransacaoDoUsuario(userId, abandonar) : abandonar(null);
+  }
+
+  /**
+   * Intenções que ficaram em 'reserving' além do limiar (o processo caiu entre
+   * a reserva e a confirmação): abandona e devolve vida e itens ao próprio dono.
+   * Roda no boot, periodicamente (server.js) e na abertura do próprio usuário.
+   *
+   * @param {{userId?: string|null, maxAgeMs?: number}} [opcoes]
+   * @returns {Promise<number>} quantas foram estornadas
+   */
+  static async recuperarOrfas({ userId = null, maxAgeMs = LIMIAR_ORFA_MS } = {}) {
+    const orfas = await GameRunModel.listarOrfas({ userId, maxAgeMs });
+    let estornadas = 0;
+    for (const orfa of orfas) {
+      if (await this.abandonarEEstornar(orfa.id, orfa.user_id)) estornadas += 1;
+    }
+    return estornadas;
   }
 }
 

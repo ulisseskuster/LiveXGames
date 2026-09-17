@@ -622,7 +622,8 @@ class UserModel {
    * vida, multiplicando as moedas ganhas. A condição precisa estar no próprio
    * UPDATE. Streamers jogam sem limite, então nunca são debitados.
    */
-  static async consumeLife(userId) {
+  /** @param {string} userId @param {any} [client] transação de quem chamou */
+  static async consumeLife(userId, client = null) {
     // Dourada primeiro: ela some à meia-noite e a normal regenera sozinha.
     // Gastar a normal antes faria o sub perder, no fim do dia, as douradas que
     // não usou. Mesmo cuidado de atomicidade da normal: a condição vai no UPDATE.
@@ -630,7 +631,8 @@ class UserModel {
 
     if (db.isAvailable()) {
       try {
-        const { rows: dourada } = await db.query(
+        const q = client || db;
+        const { rows: dourada } = await q.query(
           `UPDATE users
            SET sub_lives_used = CASE WHEN sub_lives_day = $2 THEN sub_lives_used + 1 ELSE 1 END,
                sub_lives_day = $2
@@ -659,7 +661,7 @@ class UserModel {
           WHERE id = $1 AND (lives > 0 OR role = 'streamer')
           RETURNING lives, max_lives, role, last_life_refill
         `;
-        const { rows } = await db.query(query, [userId]);
+        const { rows } = await q.query(query, [userId]);
         if (rows[0]) {
           const userInMemory = InMemoryStore.users.find((u) => u.id === userId);
           if (userInMemory) {
@@ -706,10 +708,11 @@ class UserModel {
    * Devolve uma dourada debitada para uma partida que não aconteceu. Sem isto o
    * estorno do GameRunService virava vida normal — e, com as normais cheias, nada.
    */
-  static async refundSubLife(userId) {
+  /** @param {string} userId @param {any} [client] */
+  static async refundSubLife(userId, client = null) {
     if (db.isAvailable()) {
       try {
-        await db.query(
+        await (client || db).query(
           'UPDATE users SET sub_lives_used = GREATEST(0, sub_lives_used - 1) WHERE id = $1',
           [userId]
         );
@@ -737,8 +740,9 @@ class UserModel {
    *   Ficar acima do máximo é seguro no resto do modelo: checkAndRefillLives só
    *   soma quando lives < max_lives, então o excedente não é zerado pela
    *   regeneração, e consumeLife apenas decrementa.
+   * @param {any} [client] transação de quem chamou (estorno de rodada)
    */
-  static async addExtraLife(userId, { acimaDoMaximo = false } = {}) {
+  static async addExtraLife(userId, { acimaDoMaximo = false } = {}, client = null) {
     if (db.isAvailable()) {
       try {
         const query = `
@@ -747,7 +751,7 @@ class UserModel {
           WHERE id = $1
           RETURNING lives, max_lives
         `;
-        const { rows } = await db.query(query, [userId, acimaDoMaximo]);
+        const { rows } = await (client || db).query(query, [userId, acimaDoMaximo]);
         if (rows[0]) {
           const userInMemory = InMemoryStore.users.find((u) => u.id === userId);
           if (userInMemory) userInMemory.lives = rows[0].lives;

@@ -76,12 +76,21 @@ async function post<T>(url: string, corpo: unknown): Promise<T> {
   return dados.data as T;
 }
 
-export function iniciarPartida(
+export async function iniciarPartida(
   gameId: string,
   itemIds: string[] = [],
   streamerId?: string
 ): Promise<AberturaDePartida> {
-  return post('/api/game/runs', { gameId, itemIds, streamerId });
+  // Um requestId por clique. Se a rede cair antes da resposta, o servidor pode
+  // já ter aberto (e cobrado) a rodada: repetir com o MESMO id devolve essa
+  // rodada em vez de gastar outra vida. Resposta HTTP (ErroApi) não se repete.
+  const corpo = { gameId, itemIds, streamerId, requestId: crypto.randomUUID() };
+  try {
+    return await post<AberturaDePartida>('/api/game/runs', corpo);
+  } catch (erro) {
+    if (erro instanceof ErroApi) throw erro;
+    return post<AberturaDePartida>('/api/game/runs', corpo);
+  }
 }
 
 export function revelarPartida(runId: string): Promise<AberturaDePartida> {

@@ -892,6 +892,23 @@ if (require.main === module) {
     console.log(`🏥 Healthcheck: http://localhost:${PORT}/health`);
     console.log(`=========================================`);
   });
+
+  // Intenções de rodada presas em 'reserving' (processo caiu entre a reserva e
+  // a confirmação): devolve vida e itens ao dono no boot e a cada minuto. Várias
+  // instâncias rodando juntas é seguro: cada estorno só acontece para quem
+  // conseguir abandonar a intenção (ver GameRunService.abandonarEEstornar).
+  const GameRunService = require('./services/gameRunService');
+  const recuperarOrfas = async () => {
+    if (!db.isSchemaReady()) return;
+    try {
+      const n = await GameRunService.recuperarOrfas();
+      if (n) console.log(`[Rodadas] ${n} intenção(ões) órfã(s) estornada(s).`);
+    } catch (err) {
+      console.warn('[Rodadas] Falha ao recuperar intenções órfãs:', err.message);
+    }
+  };
+  db.whenReady().then(recuperarOrfas);
+  setInterval(recuperarOrfas, 60 * 1000).unref();
 }
 
 // ─── Encerramento controlado (P1 do ESCALA.md) ───
@@ -904,7 +921,7 @@ if (require.main === module) {
 //   4. Encerra os workers do verificador (workers ociosos são unref, mas os
 //      ocupados terminam o job atual antes de sair).
 // As intenções 'reserving' e rodadas 'verifying' que sobrarem são recuperadas
-// no próximo boot (abandonarReservingStale / recuperarGeradas).
+// no próximo boot (GameRunService.recuperarOrfas / recuperarGeradas).
 //
 // O teste de shutdown não depende de sinal do SO (no Windows child.kill não
 // entrega SIGTERM/SIGINT de forma confiável): com SHUTDOWN_PORT definido, uma

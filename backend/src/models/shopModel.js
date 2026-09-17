@@ -62,10 +62,10 @@ class ShopModel {
     );
   }
 
-  static async addItemToInventory(userId, itemId, quantity = 1) {
+  static async addItemToInventory(userId, itemId, quantity = 1, client = null) {
     if (db.isAvailable()) {
       try {
-        const { rows } = await db.query(
+        const { rows } = await (client || db).query(
           `
           INSERT INTO user_inventory (user_id, item_id, quantity, updated_at)
           VALUES ($1, $2, $3, NOW())
@@ -104,10 +104,10 @@ class ShopModel {
    *
    * @returns {Promise<boolean>} true se reservou.
    */
-  static async reservarItem(userId, itemId) {
+  static async reservarItem(userId, itemId, client = null) {
     if (db.isAvailable()) {
       try {
-        const { rows } = await db.query(
+        const { rows } = await (client || db).query(
           `UPDATE user_inventory
            SET quantity = quantity - 1, updated_at = NOW()
            WHERE user_id = $1 AND item_id = $2 AND quantity >= 1

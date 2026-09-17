@@ -293,14 +293,14 @@ data. **Revalide antes de agir; não é autorização para implementar todo o ba
 - README, ESCALA e atualizacao contêm retratos de commits anteriores. Há código novo
   para doação transacional, intenção de rodada, compensação e adaptador Socket.IO;
   não os trate como inexistentes nem como garantia de conclusão dos P0/P1.
-- A abertura ainda merece auditoria: `gameRunService.js` consome a vida antes de
-  `BEGIN`; a reserva de itens chama métodos de `channelInventoryModel.js` que usam
-  `db.query()`. Comentários sobre a mesma transação não comprovam atomicidade.
-  Valide crash e rollback com PostgreSQL antes de declarar essa pendência resolvida.
-- A chave de abertura usa `Date.now()` no servidor. Isso, sozinho, não equivale a uma
-  chave estável reutilizada pelo cliente numa repetição do mesmo pedido.
-- `criarIntencao` em `gameRunModel.js` fixa `usedSubLife=false` nesta revisão.
-  Verifique preservação/devolução de vida dourada ao trabalhar em recuperação.
+- **Abertura de rodada (revisada em 17/09/2026, AUDITORIA.md C1/C2):** vida, itens
+  e intenção `reserving` são gravados numa única transação com
+  `pg_advisory_xact_lock(hashtext(userId))` (`GameRunService.reservar`). Todo
+  estorno passa por `abandonarEEstornar`, que só devolve se abandonou a intenção,
+  e sempre ao `user_id` da própria rodada. Órfãs são recuperadas por
+  `recuperarOrfas` (boot, a cada minuto e na abertura do próprio usuário).
+  `requestId` do cliente dos jogos torna a repetição idempotente. Coberto por
+  `gameRunIntention.test.js`, que roda no PostgreSQL do CI.
 - A conexão pode continuar marcada disponível quando uma migração falha. Audite
   readiness/schema antes de usar `/health` como prova de deploy íntegro.
 - Escala acima de 1.000 usuários segue sem comprovação registrada. Testes unitários,

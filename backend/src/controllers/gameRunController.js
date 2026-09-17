@@ -37,6 +37,11 @@ const ERROS = [
     'Não foi possível verificar a partida agora. Vida e itens foram devolvidos.'
   ],
   [/^VERIFIER_QUEUE_FULL$/, 503, 'Muitas partidas em andamento. Tente novamente em instantes.'],
+  [
+    /^(GENERATION_FAILED|RUN_ABANDONED)$/,
+    503,
+    'Não foi possível gerar a partida agora. Vida e itens foram devolvidos.'
+  ],
   [/^RUN_REJECTED/, 422, 'A partida não passou na verificação do servidor'],
   [/^USER_NOT_FOUND$/, 404, 'Usuário não encontrado']
 ];

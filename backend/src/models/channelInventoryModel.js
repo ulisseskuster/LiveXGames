@@ -29,9 +29,11 @@ class ChannelInventoryModel {
       });
   }
 
-  static async add(userId, streamerId, itemId, quantity = 1) {
+  // `client` opcional: quando vem, a escrita entra na transação de quem chamou
+  // (abertura/estorno de rodada). Sem ele, cada chamada é autocommit.
+  static async add(userId, streamerId, itemId, quantity = 1, client = null) {
     if (db.isAvailable()) {
-      const { rows } = await db.query(
+      const { rows } = await (client || db).query(
         `INSERT INTO channel_inventory (user_id, streamer_id, item_id, quantity)
          VALUES ($1, $2, $3, $4) ON CONFLICT (user_id, streamer_id, item_id)
          DO UPDATE SET quantity = channel_inventory.quantity + EXCLUDED.quantity, updated_at = NOW()
@@ -49,9 +51,9 @@ class ChannelInventoryModel {
     return row;
   }
 
-  static async reserve(userId, streamerId, itemId) {
+  static async reserve(userId, streamerId, itemId, client = null) {
     if (db.isAvailable()) {
-      const { rows } = await db.query(
+      const { rows } = await (client || db).query(
         `UPDATE channel_inventory SET quantity = quantity - 1, updated_at = NOW()
          WHERE user_id = $1 AND streamer_id = $2 AND item_id = $3 AND quantity > 0
          RETURNING quantity`,
@@ -65,9 +67,9 @@ class ChannelInventoryModel {
     return true;
   }
 
-  static async addLives(userId, streamerId, quantity) {
+  static async addLives(userId, streamerId, quantity, client = null) {
     if (db.isAvailable()) {
-      await db.query(
+      await (client || db).query(
         `INSERT INTO channel_wallets (user_id, streamer_id, extra_lives) VALUES ($1, $2, $3)
          ON CONFLICT (user_id, streamer_id) DO UPDATE
          SET extra_lives = channel_wallets.extra_lives + EXCLUDED.extra_lives`,
@@ -79,9 +81,9 @@ class ChannelInventoryModel {
     wallet.extra_lives = Number(wallet.extra_lives || 0) + quantity;
   }
 
-  static async consumeLife(userId, streamerId) {
+  static async consumeLife(userId, streamerId, client = null) {
     if (db.isAvailable()) {
-      const { rows } = await db.query(
+      const { rows } = await (client || db).query(
         `UPDATE channel_wallets SET extra_lives = extra_lives - 1
          WHERE user_id = $1 AND streamer_id = $2 AND extra_lives > 0 RETURNING extra_lives`,
         [userId, streamerId]
