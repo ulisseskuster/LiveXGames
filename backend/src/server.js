@@ -448,28 +448,6 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Ping real no banco, revalidado em segundo plano a cada 15s. A pagina le o
-// ultimo resultado e responde na hora: esperar a consulta deixaria /status
-// pendurado por ate 10s (connectionTimeout do pool) justamente quando o banco
-// esta fora. Antes do primeiro ping vale a flag que o pool ja mantem, atualizada
-// na conexao inicial e a cada erro. Sem DATABASE_URL nem tenta consultar: o pool
-// cairia no localhost padrao.
-let cacheBanco = { em: 0, ok: false, checando: false };
-function bancoRespondendo() {
-  if (!db.isConfigured()) return false;
-  if (!cacheBanco.checando && Date.now() - cacheBanco.em > 15000) {
-    cacheBanco.checando = true;
-    db.query('SELECT 1')
-      .then(() => {
-        cacheBanco = { em: Date.now(), ok: true, checando: false };
-      })
-      .catch(() => {
-        cacheBanco = { em: Date.now(), ok: false, checando: false };
-      });
-  }
-  return cacheBanco.em ? cacheBanco.ok : db.isConnected();
-}
-
 // Página pública de status. Cada cartão reflete uma checagem real feita na
 // hora, mas só em linguagem de usuário: nada de host de banco, nome de
 // variável, rota de webhook ou uptime — isso servia de guia de reconhecimento
@@ -484,7 +462,8 @@ app.get('/status', (req, res) => {
     },
     {
       nome: 'Contas e Progresso',
-      ok: bancoRespondendo(),
+      // Ping periódico em config/database.js; sem DATABASE_URL não há banco.
+      ok: db.isConfigured() && db.isConnected(),
       desc: 'Banco de dados guardando cadastro, fichas, inventário e ranking.',
       descFalha:
         'Banco indisponível: o jogo segue rodando, mas o progresso desta sessão pode não ser salvo.'

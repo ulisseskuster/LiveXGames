@@ -25,6 +25,8 @@ let lastConnectionError = null;
 // ou outra instância ainda está migrando). /health não pode dizer "ok" nesse
 // estado: o Render tiraria a instância nova do rotation cedo demais.
 let isSchemaReady = false;
+// Já houve conexão e o autoMigrate foi tentado? Ver ping().
+let tentouMigrar = false;
 
 function isConfigured() {
   return Boolean(process.env.DATABASE_URL);
@@ -61,9 +63,12 @@ const pool = new Pool({
   max: 10
 });
 
+// Conexão OCIOSA derrubada pelo servidor (restart, failover, pooler): o pool a
+// descarta e abre outra na próxima consulta. Isso não quer dizer que o banco
+// caiu — quem decide é o ping abaixo. Antes este evento zerava isDbConnected
+// para sempre e o /health respondia 503 com o banco saudável.
 pool.on('error', (err) => {
   console.warn('[Database] Aviso de conexão do pool PostgreSQL:', err.message);
-  isDbConnected = false;
   lastConnectionError = err.message;
 });
 
@@ -84,6 +89,7 @@ async function checkConnection() {
     client.release();
     isDbConnected = true;
     lastConnectionError = null;
+    tentouMigrar = true;
     console.log('[Database] PostgreSQL conectado com sucesso.');
 
     // Executa auto-migração assíncrona para garantir tabelas e seeds prontos
@@ -126,6 +132,22 @@ async function checkConnection() {
 // antes.
 const initialConnectionCheck = checkConnection();
 
+// Estado de conexão vivo. Se o banco estava fora no boot, tenta de novo até
+// conseguir aplicar o schema (sem isso a instância ficaria em 503 até ser
+// reiniciada); depois disso, só confere se ele responde.
+async function ping() {
+  if (!tentouMigrar) return checkConnection();
+  try {
+    await pool.query('SELECT 1');
+    isDbConnected = true;
+    lastConnectionError = null;
+  } catch (err) {
+    isDbConnected = false;
+    lastConnectionError = err.message;
+  }
+}
+if (connectionString) setInterval(ping, 15000).unref();
+
 /**
  * Decide o que fazer quando uma query falha, no lugar do catch que engolia o erro.
  *
@@ -153,11 +175,18 @@ module.exports = {
   // SQL em texto usa linhas como objetos. Sem o tipo, o driver pode ser inferido
   // pela sobrecarga rowMode: 'array', incompatível com os models.
   /** @param {string} text @param {any[]} [params] */
-  query: (text, params) => pool.query(text, params),
+  query: async (text, params) => {
+    const resultado = await pool.query(text, params);
+    isDbConnected = true;
+    return resultado;
+  },
   connect: () => pool.connect(),
-  // Em produção, modelos devem tentar o banco e falhar com 503/500 controlado,
-  // nunca cair silenciosamente em dados voláteis do processo.
-  isAvailable: () => isDbConnected || isProduction,
+  // Com banco configurado (ou em produção), os models usam SEMPRE o banco e
+  // falham com erro controlado se ele estiver fora — nunca caem em dados
+  // voláteis do processo. O InMemoryStore é só para rodar sem DATABASE_URL.
+  // Antes dependia de isDbConnected: um teste que gravasse antes do ping
+  // inicial, ou qualquer queda momentânea, desviava escritas para a memória.
+  isAvailable: () => isConfigured() || isProduction,
   isConnected: () => isDbConnected,
   /** Readiness real: banco conectado E schema aplicado (autoMigrate com sucesso). */
   isSchemaReady: () => isSchemaReady || !isConfigured(),

@@ -1,3 +1,8 @@
+// Suíte do InMemoryStore (IDs fictícios, fixtures direto na memória): roda
+// sem banco mesmo quando o ambiente define DATABASE_URL, como no CI. Antes ela
+// só passava ali porque gravava antes de o pool conectar.
+process.env.DATABASE_URL = '';
+
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const ShopService = require('../src/services/shopService');

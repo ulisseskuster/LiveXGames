@@ -45,7 +45,7 @@ Os intervalos **F → H** e **M → N** permitem perda persistente de direitos d
 
 ### P0 — Doação concluída sem crédito recuperável
 
-**✅ RESOLVIDO em 15/09/2026 (migração 027 + commit `26cc53c`).** Em `backend/src/services/livepixService.js`, a doação, o saldo e o extrato agora são gravados na mesma transação (crédito atômico) com `external_id` único; a reentrega é idempotente e nunca marca como concluído um crédito que não ocorreu. Coberto por testes de webhook (reentrega, paralelo, reconciliação) e validado no CI com PostgreSQL real.
+**✅ RESOLVIDO em 15/09/2026 (migração 027 + commit `26cc53c`).** Em `backend/src/services/livepixService.js`, a doação, o saldo e o extrato agora são gravados na mesma transação (crédito atômico) com `external_id` único; a reentrega é idempotente e nunca marca como concluído um crédito que não ocorreu. No PostgreSQL do CI, `webhook.test.js` cobre crédito e reentrega sequencial; reentrega paralela e reconciliação (`donationAtomic.test.js`) só são testadas em memória (revisão de 17/09/2026 — pendência na Fase 6 de [AUDITORIA.md](AUDITORIA.md)).
 
 ### P0 — Queda durante abertura perde vida e item
 

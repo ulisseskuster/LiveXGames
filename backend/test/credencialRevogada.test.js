@@ -3,6 +3,11 @@
 // para users(id) com ON DELETE CASCADE, então apagar 'nightpilot' levaria junto
 // todo resgate do canal — inclusive entrega física pendente de usuário real.
 // O que vazou foi a credencial, e é ela que precisa morrer.
+// Suíte do InMemoryStore (IDs fictícios, fixtures direto na memória): roda
+// sem banco mesmo quando o ambiente define DATABASE_URL, como no CI. Antes ela
+// só passava ali porque gravava antes de o pool conectar.
+process.env.DATABASE_URL = '';
+
 const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('node:fs');

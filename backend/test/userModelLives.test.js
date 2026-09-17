@@ -8,6 +8,11 @@
  * recém-gasta. Na prática as vidas eram infinitas — dava para decolar em loop e
  * farmar moedas sem limite.
  */
+// Suíte do InMemoryStore (IDs fictícios, fixtures direto na memória): roda
+// sem banco mesmo quando o ambiente define DATABASE_URL, como no CI. Antes ela
+// só passava ali porque gravava antes de o pool conectar.
+process.env.DATABASE_URL = '';
+
 const test = require('node:test');
 const assert = require('node:assert');
 

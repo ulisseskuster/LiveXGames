@@ -105,8 +105,14 @@ um comentário afirmando atomicidade ou uma execução local antiga aprovada.**
   a variável vazia neste projeto.
 - O `InMemoryStore` é para desenvolvimento/testes sem banco. Falha de PostgreSQL
   configurado não deve virar sucesso com dados gravados apenas em memória.
-- Testes com banco devem aguardar `db.whenReady()` antes de criar dados quando a
-  inicialização assíncrona puder afetar a escolha do armazenamento.
+- Com `DATABASE_URL` definida, `db.isAvailable()` é sempre verdadeiro (desde
+  17/09/2026): os models usam o banco ou falham, nunca a memória. Uma suíte feita
+  para o InMemoryStore (IDs fictícios, fixtures na memória) declara
+  `process.env.DATABASE_URL = ''` antes dos `require`. Suítes que usam o banco
+  aguardam `db.whenReady()` quando dependem do schema/seed já aplicados.
+- Dentro de uma transação, **toda** leitura e escrita usa o `client` dela. Uma
+  consulta por outra conexão enquanto a transação segura locks pode travar
+  (migração concorrente ou pool esgotado).
 - **Uma transação só cobre queries executadas no mesmo `client`.** Fazer `BEGIN`
   e depois chamar um model que usa `db.query()` não inclui essa query na transação.
   Passe o client às operações que precisam ser atômicas e confira cada implementação.
@@ -301,8 +307,9 @@ data. **Revalide antes de agir; não é autorização para implementar todo o ba
   `recuperarOrfas` (boot, a cada minuto e na abertura do próprio usuário).
   `requestId` do cliente dos jogos torna a repetição idempotente. Coberto por
   `gameRunIntention.test.js`, que roda no PostgreSQL do CI.
-- A conexão pode continuar marcada disponível quando uma migração falha. Audite
-  readiness/schema antes de usar `/health` como prova de deploy íntegro.
+- `/health` exige conexão viva (ping a cada 15 s em `database.js`) e schema
+  aplicado. Um erro de conexão ociosa não marca mais o banco como fora; um banco
+  fora no boot é tentado de novo até o autoMigrate rodar.
 - Escala acima de 1.000 usuários segue sem comprovação registrada. Testes unitários,
   E2E e benchmark isolado de WASM não substituem carga representativa em homologação.
 - Antes de concluir segurança/operação, revalide revogação de sessão, fila de workers,

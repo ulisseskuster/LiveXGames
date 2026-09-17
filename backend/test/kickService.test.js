@@ -111,6 +111,10 @@ test('KickService: verifyWebhookSignature aceita assinatura RSA válida e rejeit
 test('KickService: processSubscriptionEvent promove espectador vinculado a subscriber com vidas douradas', async () => {
   const streamerUsername = `streamer_kick_${Date.now()}`;
   const viewerUsername = `viewer_kick_${Date.now()}`;
+  // IDs únicos por execução: num banco persistente, IDs fixos já pertencem a
+  // contas de execuções anteriores e findByKickId acharia a conta antiga.
+  const kickStreamerId = String(Date.now());
+  const kickViewerId = String(Date.now() + 1);
 
   await AuthService.register({
     name: 'Streamer Kick',
@@ -124,7 +128,7 @@ test('KickService: processSubscriptionEvent promove espectador vinculado a subsc
   const streamerUser = await UserModel.findByUsername(streamerUsername);
   await UserModel.linkStreamAccount(streamerUser.id, {
     provider: 'kick',
-    accountId: '999888777',
+    accountId: kickStreamerId,
     accountUsername: `${streamerUsername}_kick`,
     isSubscriber: false
   });
@@ -140,14 +144,14 @@ test('KickService: processSubscriptionEvent promove espectador vinculado a subsc
   });
   await UserModel.linkStreamAccount(viewerReg.user.id, {
     provider: 'kick',
-    accountId: '111222333',
+    accountId: kickViewerId,
     accountUsername: `${viewerUsername}_kick`,
     isSubscriber: false
   });
 
   const result = await KickService.processSubscriptionEvent('channel.subscription.new', {
-    broadcaster: { user_id: 999888777, username: `${streamerUsername}_kick` },
-    subscriber: { user_id: 111222333, username: `${viewerUsername}_kick` }
+    broadcaster: { user_id: Number(kickStreamerId), username: `${streamerUsername}_kick` },
+    subscriber: { user_id: Number(kickViewerId), username: `${viewerUsername}_kick` }
   });
 
   assert.equal(result.applied, true);

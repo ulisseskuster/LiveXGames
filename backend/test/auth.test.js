@@ -9,9 +9,12 @@ process.env.ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'senha-de-teste-do-ad
 const AuthService = require('../src/services/authService');
 const UserModel = require('../src/models/userModel');
 const InMemoryStore = require('../src/data/store');
+const db = require('../src/config/database');
 
-test.before(() => {
+test.before(async () => {
   InMemoryStore.seedDemoViewer();
+  // Com banco, viewer_alpha vem do seed de demonstração aplicado no autoMigrate.
+  await db.whenReady();
 });
 
 test('AuthService: login com credenciais válidas deve retornar token JWT e dados do usuário', async () => {
@@ -71,11 +74,16 @@ test('AuthService: registro com senha fraca (menos de 6 caracteres) deve ser rej
 });
 
 test('UserModel: consumo de vida deve decrementar o total de vidas do usuário', async () => {
-  const user = await UserModel.findByUsername('viewer_alpha');
-  const initialLives = user.lives;
+  // Conta própria: viewer_alpha é compartilhada e pode chegar sem vidas.
+  const username = `vidas_${Date.now()}`;
+  const user = await UserModel.create({
+    username,
+    email: `${username}@test.com`,
+    password: 'senhaSegura123'
+  });
 
   const updated = await UserModel.consumeLife(user.id);
-  assert.equal(updated.lives, Math.max(0, initialLives - 1));
+  assert.equal(updated.lives, user.lives - 1);
 });
 
 test('AuthService: vincular Twitch com status de Sub promove a subscriber com 2 vidas douradas', async () => {
@@ -142,7 +150,11 @@ test('UserModel: sub gasta as douradas antes das normais, não acumula Twitch + 
   assert.equal(perfil.user.sub_lives, 0);
 
   // Uso gravado num dia que já passou: as douradas voltam sem job de reset.
-  InMemoryStore.users.find((u) => u.id === id).sub_lives_day = '2000-01-01';
+  if (db.isAvailable()) {
+    await db.query(`UPDATE users SET sub_lives_day = '2000-01-01' WHERE id = $1`, [id]);
+  } else {
+    InMemoryStore.users.find((u) => u.id === id).sub_lives_day = '2000-01-01';
+  }
   perfil = await AuthService.getProfile(id);
   assert.equal(perfil.user.sub_lives, 2);
 });

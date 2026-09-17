@@ -290,7 +290,13 @@ Cada fase termina com lint, typecheck, testes do backend e CI verde.
 6. **Testes em PostgreSQL real, no CI:** clique duplo, órfã de outro usuário, queda entre `COMMIT` e confirmação, repetição com o mesmo `requestId`.
 7. **Documentação:** P0-B reaberto e depois fechado no ESCALA.md; comentários corrigidos.
 
-### Fase 2 — Disponibilidade (A1)
+### Fase 2 — Disponibilidade (A1) — ✅ concluída em 17/09/2026
+
+Achado durante a fase: 12 suítes feitas para o InMemoryStore recebiam o
+`DATABASE_URL` do CI e só passavam porque gravavam antes de o pool conectar.
+Agora elas declaram o modo memória. Também foi corrigida uma leitura fora da
+transação no estorno de rodada (`devolverVida`), que travava com uma migração
+concorrente.
 
 - `query()` bem-sucedida marca a conexão como ativa, e um ping periódico fica em `database.js`.
 - `isAvailable()` passa a ser `isConfigured()`: banco configurado nunca cai em memória.
@@ -325,7 +331,7 @@ Cada fase termina com lint, typecheck, testes do backend e CI verde.
 ### Fase 6 — Economia e higiene
 
 - **M3, roleta:** giro e prêmio numa transação, dia no horário de Brasília, elegibilidade pela carteira do canal.
-- **M10, doações:** job de conciliação e índice único `(provider, streamer_id, external_id)`.
+- **M10, doações:** job de conciliação e índice único `(provider, streamer_id, external_id)`; levar os testes de reentrega paralela e reconciliação (`donationAtomic.test.js`, hoje só em memória) para o PostgreSQL.
 - **Itens baixos:** 1–11.
 
 ### Backlog

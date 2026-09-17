@@ -580,7 +580,12 @@ class GameRunService {
 
   /** Streamer não gasta vida ao abrir, então também não recebe de volta. */
   static async devolverVida(userId, usouDourada, client = null) {
-    const usuario = await UserModel.findById(userId);
+    // Dentro de uma transação, toda leitura usa o mesmo client: consultar por
+    // outra conexão enquanto esta segura locks pode travar (migração no meio,
+    // ou pool esgotado por transações esperando uma segunda conexão).
+    const usuario = client
+      ? (await client.query('SELECT role FROM users WHERE id = $1', [userId])).rows[0]
+      : await UserModel.findById(userId);
     if (!usuario || usuario.role === 'streamer') return;
     if (usouDourada) await UserModel.refundSubLife(userId, client);
     else await UserModel.addExtraLife(userId, {}, client);
